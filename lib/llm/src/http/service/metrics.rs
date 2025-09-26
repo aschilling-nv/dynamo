@@ -26,6 +26,11 @@ pub use prometheus::Registry;
 
 use super::RouteDoc;
 
+/// State for metrics handler with NIM support
+struct MetricsHandlerState {
+    registry: Arc<Registry>,
+}
+
 pub struct Metrics {
     request_counter: IntCounterVec,
     inflight_gauge: IntGaugeVec,
@@ -825,21 +830,42 @@ pub fn process_response_using_event_converter_and_observe_metrics<T: Serialize>(
     Ok(event)
 }
 
-/// Create a new router with the given path
-pub fn router(registry: Registry, path: Option<String>) -> (Vec<RouteDoc>, Router) {
-    let registry = Arc::new(registry);
+/// Create a new router with optional NIM metrics support
+pub fn router(
+    registry: Registry,
+    path: Option<String>,
+    nim_on_demand: bool,
+    nim_state: Option<Arc<super::service_v2::State>>,
+) -> (Vec<RouteDoc>, Router) {
     let path = path.unwrap_or_else(|| "/metrics".to_string());
     let doc = RouteDoc::new(axum::http::Method::GET, &path);
+
+    // DEPRECATION: NIM metrics support is temporary and will be removed once NIM uses Dynamo backend
+    let mut registry = registry;
+    super::nim::register_nim_collector_if_enabled(&mut registry, nim_on_demand, nim_state.as_ref());
+
+    let metrics_state = MetricsHandlerState {
+        registry: Arc::new(registry),
+    };
+
     let route = Router::new()
         .route(&path, get(handler_metrics))
-        .with_state(registry);
+        .with_state(Arc::new(metrics_state));
     (vec![doc], route)
 }
 
-/// Metrics Handler
-async fn handler_metrics(State(registry): State<Arc<Registry>>) -> impl IntoResponse {
+/// Create a basic router without NIM support (backward compatibility)
+pub fn basic_router(registry: Registry, path: Option<String>) -> (Vec<RouteDoc>, Router) {
+    router(registry, path, false, None)
+}
+
+/// Unified metrics handler with optional NIM support
+async fn handler_metrics(State(state): State<Arc<MetricsHandlerState>>) -> impl IntoResponse {
+    // Gather and encode metrics
+    // Note: If nim_on_demand is enabled, the NimMetricsCollector registered with the registry
+    // will automatically call poll_nim_backend_stats when gather() is invoked
     let encoder = prometheus::TextEncoder::new();
-    let metric_families = registry.gather();
+    let metric_families = state.registry.gather();
     let mut buffer = vec![];
     if encoder.encode(&metric_families, &mut buffer).is_err() {
         return (

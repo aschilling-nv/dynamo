@@ -59,6 +59,8 @@ pub struct LocalModelBuilder {
     user_data: Option<serde_json::Value>,
     custom_template_path: Option<PathBuf>,
     namespace: Option<String>,
+    nim_metrics_polling_interval_seconds: f64,
+    nim_metrics_on_demand: bool,
 }
 
 impl Default for LocalModelBuilder {
@@ -83,6 +85,8 @@ impl Default for LocalModelBuilder {
             user_data: Default::default(),
             custom_template_path: Default::default(),
             namespace: Default::default(),
+            nim_metrics_polling_interval_seconds: 0.0,
+            nim_metrics_on_demand: false,
         }
     }
 }
@@ -184,6 +188,16 @@ impl LocalModelBuilder {
         self
     }
 
+    pub fn nim_metrics_polling_interval_seconds(&mut self, interval_seconds: f64) -> &mut Self {
+        self.nim_metrics_polling_interval_seconds = interval_seconds;
+        self
+    }
+
+    pub fn nim_metrics_on_demand(&mut self, on_demand: bool) -> &mut Self {
+        self.nim_metrics_on_demand = on_demand;
+        self
+    }
+
     /// Make an LLM ready for use:
     /// - Download it from Hugging Face (and NGC in future) if necessary
     /// - Resolve the path
@@ -194,6 +208,14 @@ impl LocalModelBuilder {
     /// - A folder: The last part of the folder name: "/data/llms/Qwen2.5-3B-Instruct" -> "Qwen2.5-3B-Instruct"
     /// - An HF repo: The HF repo name: "Qwen/Qwen3-0.6B" stays the same
     pub async fn build(&mut self) -> anyhow::Result<LocalModel> {
+        // Validate NIM metrics configuration
+        if self.nim_metrics_polling_interval_seconds < 0.0 {
+            anyhow::bail!("nim_metrics_polling_interval_seconds must be >= 0");
+        }
+        if self.nim_metrics_polling_interval_seconds > 0.0 && self.nim_metrics_on_demand {
+            anyhow::bail!("NIM metrics polling and on-demand mode cannot be enabled together");
+        }
+
         // Generate an endpoint ID for this model if the user didn't provide one.
         // The user only provides one if exposing the model.
         let endpoint_id = self
@@ -228,6 +250,8 @@ impl LocalModelBuilder {
                 router_config: self.router_config.take().unwrap_or_default(),
                 runtime_config: self.runtime_config.clone(),
                 namespace: self.namespace.clone(),
+                nim_metrics_polling_interval_seconds: self.nim_metrics_polling_interval_seconds,
+                nim_metrics_on_demand: self.nim_metrics_on_demand,
             });
         }
 
@@ -307,6 +331,8 @@ impl LocalModelBuilder {
             router_config: self.router_config.take().unwrap_or_default(),
             runtime_config: self.runtime_config.clone(),
             namespace: self.namespace.clone(),
+            nim_metrics_polling_interval_seconds: self.nim_metrics_polling_interval_seconds,
+            nim_metrics_on_demand: self.nim_metrics_on_demand,
         })
     }
 }
@@ -324,6 +350,8 @@ pub struct LocalModel {
     router_config: RouterConfig,
     runtime_config: ModelRuntimeConfig,
     namespace: Option<String>,
+    nim_metrics_polling_interval_seconds: f64,
+    nim_metrics_on_demand: bool,
 }
 
 impl LocalModel {
@@ -376,6 +404,20 @@ impl LocalModel {
 
     pub fn namespace(&self) -> Option<&str> {
         self.namespace.as_deref()
+    }
+
+    pub fn nim_metrics_polling_interval_seconds(&self) -> f64 {
+        self.nim_metrics_polling_interval_seconds
+    }
+
+    pub fn nim_metrics_on_demand(&self) -> bool {
+        self.nim_metrics_on_demand
+    }
+
+    pub fn is_gguf(&self) -> bool {
+        // GGUF is the only file (not-folder) we accept, so we don't need to check the extension
+        // We will error when we come to parse it
+        self.full_path.is_file()
     }
 
     /// An endpoint to identify this model by.
