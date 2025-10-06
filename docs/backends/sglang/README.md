@@ -245,19 +245,6 @@ This allows a request to be migrated up to 3 times before failing. See the [Requ
 
 Below we provide a selected list of advanced examples. Please open up an issue if you'd like to see a specific example!
 
-```{toctree}
-:maxdepth: 1
-:hidden:
-
-multinode-examples
-dsr1-wideep-h100
-dsr1-wideep-gb200
-sgl-hicache-example
-multimodal_epd
-expert-distribution-eplb
-gpt-oss
-```
-
 ### Run a multi-node sized model
 - **[Run a multi-node model](multinode-examples.md)**
 
