@@ -11,7 +11,7 @@ The examples below assume you build the latest image yourself from source. If us
 
         Demonstrates the basic concepts of Dynamo by creating a simple GPU-unaware graph
 
-    .. grid-item-card:: :doc:`vLLM <../components/backends/vllm/README>`
+    .. grid-item-card:: :doc:`vLLM <backends/vllm/README>`
         :link: ../components/backends/vllm/README
         :link-type: doc
 
