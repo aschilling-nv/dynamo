@@ -177,6 +177,20 @@ Notes:
 
 Below we provide a selected list of advanced examples. Please open up an issue if you'd like to see a specific example!
 
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+multinode/multinode-examples
+multinode/multinode-multimodal-example
+llama4_plus_eagle
+kv-cache-transfer
+multimodal_support
+multimodal_epd
+gemma3_sliding_window_attention
+gpt-oss
+```
+
 ### Multinode Deployment
 
 For comprehensive instructions on multinode serving, see the [multinode-examples.md](./multinode/multinode-examples.md) guide. It provides step-by-step deployment examples and configuration tips for running Dynamo with TensorRT-LLM across multiple nodes. While the walkthrough uses DeepSeek-R1 as the model, you can easily adapt the process for any supported model by updating the relevant configuration files. You can see [Llama4+eagle](./llama4_plus_eagle.md) guide to learn how to use these scripts when a single worker fits on the single node.

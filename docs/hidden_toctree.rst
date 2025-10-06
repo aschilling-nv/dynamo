@@ -42,7 +42,7 @@
    architecture/request_migration.md
    architecture/request_cancellation.md
 
-   components/backends/trtllm/multinode/multinode-examples.md
+   backends/trtllm/multinode/multinode-examples.md
    backends/sglang/multinode-examples.md
 
    examples/README.md

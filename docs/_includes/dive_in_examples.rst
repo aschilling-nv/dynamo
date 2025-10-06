@@ -23,8 +23,8 @@ The examples below assume you build the latest image yourself from source. If us
 
         Presents examples and reference implementations for deploying Large Language Models (LLMs) in various configurations with SGLang.
 
-    .. grid-item-card:: :doc:`TensorRT-LLM <../components/backends/trtllm/README>`
-        :link: ../components/backends/trtllm/README
+    .. grid-item-card:: :doc:`TensorRT-LLM <../backends/trtllm/README>`
+        :link: ../backends/trtllm/README
         :link-type: doc
 
         Presents examples and reference implementations for deploying Large Language Models (LLMs) in various configurations with TensorRT-LLM.
