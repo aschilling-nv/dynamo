@@ -200,7 +200,7 @@ For comprehensive instructions on multinode serving, see the [multinode-examples
 
 ### Kubernetes Deployment
 
-For complete Kubernetes deployment instructions, configurations, and troubleshooting, see [TensorRT-LLM Kubernetes Deployment Guide](deploy/README.md).
+For complete Kubernetes deployment instructions, configurations, and troubleshooting, see [TensorRT-LLM Kubernetes Deployment Guide](../../../components/backends/trtllm/deploy/README.md).
 
 ### Client
 
@@ -316,7 +316,7 @@ sampling_params.logits_processor = create_trtllm_adapters(processors)
 
 ## Performance Sweep
 
-For detailed instructions on running comprehensive performance sweeps across both aggregated and disaggregated serving configurations, see the [TensorRT-LLM Benchmark Scripts for DeepSeek R1 model](./performance_sweeps/README.md). This guide covers recommended benchmarking setups, usage of provided scripts, and best practices for evaluating system performance.
+For detailed instructions on running comprehensive performance sweeps across both aggregated and disaggregated serving configurations, see the [TensorRT-LLM Benchmark Scripts for DeepSeek R1 model](../../../components/backends/trtllm/performance_sweeps/README.md). This guide covers recommended benchmarking setups, usage of provided scripts, and best practices for evaluating system performance.
 
 ## Dynamo KV Block Manager Integration
 
