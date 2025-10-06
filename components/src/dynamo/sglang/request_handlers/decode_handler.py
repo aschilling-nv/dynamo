@@ -163,7 +163,9 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                     yield out
 
     async def _process_token_stream(
-        self, stream_source: AsyncGenerator[Dict[str, Any], None], context: Optional[Context] = None
+        self,
+        stream_source: AsyncGenerator[Dict[str, Any], None],
+        context: Optional[Context] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Process token-based stream output.
 
@@ -222,7 +224,9 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 )
 
     async def _process_text_stream(
-        self, stream_source: AsyncGenerator[Dict[str, Any], None], context: Optional[Context] = None
+        self,
+        stream_source: AsyncGenerator[Dict[str, Any], None],
+        context: Optional[Context] = None,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Process text-based stream output in OpenAI format.
 

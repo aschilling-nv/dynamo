@@ -51,7 +51,9 @@ class BaseWorkerHandler(ABC):
         self.skip_tokenizer_init = config.server_args.skip_tokenizer_init
 
     @abstractmethod
-    async def generate(self, request: Dict[str, Any], context: Optional[Context] = None):
+    async def generate(
+        self, request: Dict[str, Any], context: Optional[Context] = None
+    ):
         """Generate response from request.
 
         Args:
@@ -117,7 +119,9 @@ class BaseWorkerHandler(ABC):
 
         return bootstrap_host, bootstrap_port
 
-    async def _handle_cancellation(self, sglang_request_id: str, context: Optional[Context]):
+    async def _handle_cancellation(
+        self, sglang_request_id: str, context: Optional[Context]
+    ):
         """Background task to handle cancellation by monitoring context state."""
         if not context:
             return
@@ -179,7 +183,7 @@ class BaseWorkerHandler(ABC):
         if not context:
             yield None
             return
-            
+
         logging.info(
             f"Creating cancellation monitor task for SGLang Request ID {sglang_request_id}, Context: {context.id()}"
         )

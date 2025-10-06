@@ -3,7 +3,7 @@
 
 import asyncio
 import logging
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, AsyncGenerator, Dict, Optional
 
 import sglang as sgl
 
