@@ -12,7 +12,7 @@ The examples below assume you build the latest image yourself from source. If us
         Demonstrates the basic concepts of Dynamo by creating a simple GPU-unaware graph
 
     .. grid-item-card:: :doc:`vLLM <backends/vllm/README>`
-        :link: ../components/backends/vllm/README
+        :link: backends/vllm/README
         :link-type: doc
 
         Presents examples and reference implementations for deploying Large Language Models (LLMs) in various configurations with VLLM.
