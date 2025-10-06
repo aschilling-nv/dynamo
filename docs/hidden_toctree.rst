@@ -51,6 +51,10 @@
    architecture/distributed_runtime.md
    architecture/dynamo_flow.md
 
+   backends/vllm/deepseek-r1.md
+   backends/vllm/gpt-oss.md
+   backends/vllm/multi-node.md
+
 
 ..   TODO: architecture/distributed_runtime.md and architecture/dynamo_flow.md
      have some outdated names/references and need a refresh.
