@@ -35,13 +35,13 @@ git checkout $(git describe --tags $(git rev-list --tags --max-count=1))
 
 | Feature | SGLang | Notes |
 |---------|--------|-------|
-| [**Disaggregated Serving**](../../../docs/architecture/disagg_serving.md) | ✅ |  |
-| [**Conditional Disaggregation**](../../../docs/architecture/disagg_serving.md#conditional-disaggregation) | 🚧 | WIP [PR](https://github.com/sgl-project/sglang/pull/7730) |
-| [**KV-Aware Routing**](../../../docs/architecture/kv_cache_routing.md) | ✅ |  |
-| [**SLA-Based Planner**](../../../docs/architecture/sla_planner.md) | ✅ |  |
-| [**Multimodal EPD Disaggregation**](docs/multimodal_epd.md) | ✅ |  |
-| [**Load Based Planner**](../../../docs/architecture/load_planner.md) | ❌ | Planned |
-| [**KVBM**](../../../docs/architecture/kvbm_architecture.md) | ❌ | Planned |
+| [**Disaggregated Serving**](../../architecture/disagg_serving.md) | ✅ |  |
+| [**Conditional Disaggregation**](../../architecture/disagg_serving.md#conditional-disaggregation) | 🚧 | WIP [PR](https://github.com/sgl-project/sglang/pull/7730) |
+| [**KV-Aware Routing**](../../architecture/kv_cache_routing.md) | ✅ |  |
+| [**SLA-Based Planner**](../../architecture/sla_planner.md) | ✅ |  |
+| [**Multimodal EPD Disaggregation**](multimodal_epd.md) | ✅ |  |
+| [**Load Based Planner**](../../architecture/load_planner.md) | ❌ | Planned |
+| [**KVBM**](../../architecture/kvbm_architecture.md) | ❌ | Planned |
 
 ### Large Scale P/D and WideEP Features
 
@@ -209,7 +209,7 @@ cd $DYNAMO_HOME/components/backends/sglang
 ./launch/disagg_dp_attn.sh
 ```
 
-When using MoE models, you can also use the our implementation of the native SGLang endpoints to record expert distribution data. The `disagg_dp_attn.sh` script automatically sets up the SGLang HTTP server, the environment variable that controls the expert distribution recording directory, and sets up the expert distribution recording mode to `stat`. You can learn more about expert parallelism load balancing [here](docs/expert-distribution-eplb.md).
+When using MoE models, you can also use the our implementation of the native SGLang endpoints to record expert distribution data. The `disagg_dp_attn.sh` script automatically sets up the SGLang HTTP server, the environment variable that controls the expert distribution recording directory, and sets up the expert distribution recording mode to `stat`. You can learn more about expert parallelism load balancing [here](expert-distribution-eplb.md).
 
 ### Testing the Deployment
 
@@ -276,7 +276,7 @@ gpt-oss
 We currently provide deployment examples for Kubernetes and SLURM.
 
 ## Kubernetes
-- **[Deploying Dynamo with SGLang on Kubernetes](deploy/README.md)**
+- **[Deploying Dynamo with SGLang on Kubernetes](../../../components/backends/sglang/deploy/README.md)**
 
 ## SLURM
-- **[Deploying Dynamo with SGLang on SLURM](slurm_jobs/README.md)**
+- **[Deploying Dynamo with SGLang on SLURM](../../../components/backends/sglang/slurm_jobs/README.md)**

@@ -24,7 +24,7 @@ This directory contains the core components that make up the Dynamo inference fr
 Dynamo supports multiple inference engines (with a focus on SGLang, vLLM, and TensorRT-LLM), each with their own deployment configurations and capabilities:
 
 - **[vLLM](/docs/backends/vllm/README.md)** - High-performance LLM inference with native KV cache events and NIXL-based transfer mechanisms
-- **[SGLang](backends/sglang/README.md)** - Structured generation language framework with ZMQ-based communication
+- **[SGLang](/docs/backends/sglang/README.md)** - Structured generation language framework with ZMQ-based communication
 - **[TensorRT-LLM](backends/trtllm/README.md)** - NVIDIA's optimized LLM inference engine with TensorRT acceleration
 
 Each engine provides launch scripts for different deployment patterns in their respective `/launch` & `/deploy` directories.

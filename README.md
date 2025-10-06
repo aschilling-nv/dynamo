@@ -66,7 +66,7 @@ Dynamo is designed to be inference engine agnostic (supports TRT-LLM, vLLM, SGLa
 To learn more about each framework and their capabilities, check out each framework's README!
 
 - **[vLLM](docs/backends/vllm/README.md)**
-- **[SGLang](components/backends/sglang/README.md)**
+- **[SGLang](docs/backends/sglang/README.md)**
 - **[TensorRT-LLM](components/backends/trtllm/README.md)**
 
 Built in Rust for performance and in Python for extensibility, Dynamo is fully open-source and driven by a transparent, OSS (Open Source Software) first development approach.

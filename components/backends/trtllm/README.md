@@ -190,7 +190,7 @@ For complete Kubernetes deployment instructions, configurations, and troubleshoo
 
 ### Client
 
-See [client](../sglang/README.md#testing-the-deployment) section to learn how to send request to the deployment.
+See [client](../../../docs/backends/sglang/README.md#testing-the-deployment) section to learn how to send request to the deployment.
 
 NOTE: To send a request to a multi-node deployment, target the node which is running `python3 -m dynamo.frontend <args>`.
 
@@ -230,7 +230,7 @@ This allows a request to be migrated up to 3 times before failing. See the [Requ
 
 ## Client
 
-See [client](../sglang/README.md#testing-the-deployment) section to learn how to send request to the deployment.
+See [client](../../../docs/backends/sglang/README.md#testing-the-deployment) section to learn how to send request to the deployment.
 
 NOTE: To send a request to a multi-node deployment, target the node which is running `python3 -m dynamo.frontend <args>`.
 
