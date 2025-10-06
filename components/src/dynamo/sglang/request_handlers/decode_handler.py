@@ -7,7 +7,7 @@ from typing import Any, AsyncGenerator, Dict, Optional
 
 import sglang as sgl
 
-from dynamo._core import Client, Component
+from dynamo._core import Client, Component, Context
 from dynamo.sglang.args import Config, DisaggregationMode
 from dynamo.sglang.protocol import DisaggPreprocessedRequest
 from dynamo.sglang.publisher import DynamoSglangPublisher
@@ -93,12 +93,13 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         return {k: v for k, v in param_mapping.items() if v is not None}
 
     async def generate(
-        self, request: Dict[str, Any]
+        self, request: Dict[str, Any], context: Optional[Context] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Generate response in aggregated or disaggregated mode.
 
         Args:
             request: Request dict with input and sampling parameters.
+            context: Optional context object for cancellation handling.
 
         Yields:
             Response dicts with token_ids or OpenAI-formatted chunks.
@@ -106,6 +107,8 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         Raises:
             RuntimeError: If no bootstrap info received from prefill worker.
         """
+        if context:
+            logging.debug(f"New Request ID: {context.id()}")
         sampling_params = self._build_sampling_params(request)
         input_param = self._get_input_param(request)
 
@@ -115,13 +118,18 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 DisaggPreprocessedRequest(
                     request=request,
                     sampling_params=sampling_params,
-                ).model_dump()
+                ).model_dump(),
+                context=context,
             )
 
             bootstrap_info = None
             async for info in prefill_stream:
                 bootstrap_info = info.data()
                 break
+
+            if context and (context.is_stopped() or context.is_killed()):
+                logging.debug(f"Aborted Request ID: {context.id()}")
+                return
 
             if not bootstrap_info:
                 raise RuntimeError("No bootstrap info received from prefill worker")
@@ -136,10 +144,10 @@ class DecodeWorkerHandler(BaseWorkerHandler):
             )
 
             if self.skip_tokenizer_init:
-                async for out in self._process_token_stream(decode):
+                async for out in self._process_token_stream(decode, context):
                     yield out
             else:
-                async for out in self._process_text_stream(decode):
+                async for out in self._process_text_stream(decode, context):
                     yield out
         else:
             agg = await self.engine.async_generate(
@@ -148,19 +156,20 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 stream=True,
             )
             if self.skip_tokenizer_init:
-                async for out in self._process_token_stream(agg):
+                async for out in self._process_token_stream(agg, context):
                     yield out
             else:
-                async for out in self._process_text_stream(agg):
+                async for out in self._process_text_stream(agg, context):
                     yield out
 
     async def _process_token_stream(
-        self, stream_source: AsyncGenerator[Dict[str, Any], None]
+        self, stream_source: AsyncGenerator[Dict[str, Any], None], context: Optional[Context] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Process token-based stream output.
 
         Args:
             stream_source: Async generator from engine.async_generate.
+            context: Optional context object for cancellation handling.
 
         Yields:
             Dict with token_ids and optional finish_reason.
@@ -169,8 +178,25 @@ class DecodeWorkerHandler(BaseWorkerHandler):
             ValueError: If response missing output_ids.
         """
         num_output_tokens_so_far = 0
+        cancellation_task = None
 
         async for res in stream_source:
+            # Extract SGLang request ID from the first response and start cancellation monitoring
+            if context and cancellation_task is None:
+                meta_info = res.get("meta_info", {})
+                sglang_request_id = meta_info.get("id")
+                if sglang_request_id:
+                    # Now we have the request ID, start the cancellation monitor
+                    cancellation_context = self._cancellation_monitor(
+                        sglang_request_id, context
+                    )
+                    cancellation_task = await cancellation_context.__aenter__()
+
+            # Check for cancellation on each iteration
+            if context and (context.is_stopped() or context.is_killed()):
+                logging.debug(f"Aborted Request ID: {context.id()}")
+                break
+
             finish_reason = res["meta_info"]["finish_reason"]
             if finish_reason:
                 out = {"token_ids": [], "finish_reason": finish_reason["type"]}
@@ -186,20 +212,47 @@ class DecodeWorkerHandler(BaseWorkerHandler):
 
             yield out
 
+        # Clean up cancellation monitor if it was created
+        if cancellation_task is not None:
+            try:
+                await cancellation_context.__aexit__(None, None, None)
+            except Exception as e:
+                logging.error(
+                    f"Error cleaning up cancellation monitor for token stream: {e}"
+                )
+
     async def _process_text_stream(
-        self, stream_source: AsyncGenerator[Dict[str, Any], None]
+        self, stream_source: AsyncGenerator[Dict[str, Any], None], context: Optional[Context] = None
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Process text-based stream output in OpenAI format.
 
         Args:
             stream_source: Async generator from engine.async_generate.
+            context: Optional context object for cancellation handling.
 
         Yields:
             OpenAI-formatted chat completion chunk dicts.
         """
         count = 0
+        cancellation_task = None
 
         async for res in stream_source:
+            # Extract SGLang request ID from the first response and start cancellation monitoring
+            if context and cancellation_task is None:
+                meta_info = res.get("meta_info", {})
+                sglang_request_id = meta_info.get("id")
+                if sglang_request_id:
+                    # Now we have the request ID, start the cancellation monitor
+                    cancellation_context = self._cancellation_monitor(
+                        sglang_request_id, context
+                    )
+                    cancellation_task = await cancellation_context.__aenter__()
+
+            # Check for cancellation on each iteration
+            if context and (context.is_stopped() or context.is_killed()):
+                logging.debug(f"Aborted Request ID: {context.id()}")
+                break
+
             index = res.get("index", 0)
             text = res.get("text", "")
 
@@ -223,3 +276,12 @@ class DecodeWorkerHandler(BaseWorkerHandler):
             }
             yield response
             count = next_count
+
+        # Clean up cancellation monitor if it was created
+        if cancellation_task is not None:
+            try:
+                await cancellation_context.__aexit__(None, None, None)
+            except Exception as e:
+                logging.error(
+                    f"Error cleaning up cancellation monitor for text stream: {e}"
+                )
