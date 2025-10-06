@@ -65,7 +65,7 @@ Dynamo is designed to be inference engine agnostic (supports TRT-LLM, vLLM, SGLa
 
 To learn more about each framework and their capabilities, check out each framework's README!
 
-- **[vLLM](components/backends/vllm/README.md)**
+- **[vLLM](docs/backends/vllm/README.md)**
 - **[SGLang](components/backends/sglang/README.md)**
 - **[TensorRT-LLM](components/backends/trtllm/README.md)**
 

@@ -232,7 +232,7 @@ envs:
 
 ## Testing the Deployment
 
-Send a test request to verify your deployment. See the [client section](../../../../components/backends/vllm/README.md#client) for detailed instructions.
+Send a test request to verify your deployment. See the [client section](../../../../docs/backends/vllm/README.md#client) for detailed instructions.
 
 **Note:** For multi-node deployments, target the node running `python3 -m dynamo.frontend <args>`.
 
