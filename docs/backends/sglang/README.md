@@ -245,18 +245,31 @@ This allows a request to be migrated up to 3 times before failing. See the [Requ
 
 Below we provide a selected list of advanced examples. Please open up an issue if you'd like to see a specific example!
 
+```{toctree}
+:maxdepth: 1
+:hidden:
+
+multinode-examples
+dsr1-wideep-h100
+dsr1-wideep-gb200
+sgl-hicache-example
+multimodal_epd
+expert-distribution-eplb
+gpt-oss
+```
+
 ### Run a multi-node sized model
-- **[Run a multi-node model](docs/multinode-examples.md)**
+- **[Run a multi-node model](multinode-examples.md)**
 
 ### Large scale P/D disaggregation with WideEP
-- **[Run DeepSeek-R1 on 104+ H100s](docs/dsr1-wideep-h100.md)**
-- **[Run DeepSeek-R1-FP8 on GB200s](docs/dsr1-wideep-gb200.md)**
+- **[Run DeepSeek-R1 on 104+ H100s](dsr1-wideep-h100.md)**
+- **[Run DeepSeek-R1-FP8 on GB200s](dsr1-wideep-gb200.md)**
 
 ### Hierarchical Cache (HiCache)
-- **[Enable SGLang Hierarchical Cache (HiCache)](docs/sgl-hicache-example.md)**
+- **[Enable SGLang Hierarchical Cache (HiCache)](sgl-hicache-example.md)**
 
 ### Multimodal Encode-Prefill-Decode (EPD) Disaggregation with NIXL
-- **[Run a multimodal model with EPD Disaggregation](docs/multimodal_epd.md)**
+- **[Run a multimodal model with EPD Disaggregation](multimodal_epd.md)**
 
 ## Deployment
 

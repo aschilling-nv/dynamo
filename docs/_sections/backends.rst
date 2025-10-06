@@ -38,5 +38,5 @@ Dynamo currently supports the following high-performance inference backends:
    :maxdepth: 1
 
    vLLM <../backends/vllm/README>
-   SGLang <../components/backends/sglang/README>
+   SGLang <../backends/sglang/README>
    TensorRT-LLM <../components/backends/trtllm/README>

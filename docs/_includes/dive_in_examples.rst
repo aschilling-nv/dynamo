@@ -17,8 +17,8 @@ The examples below assume you build the latest image yourself from source. If us
 
         Presents examples and reference implementations for deploying Large Language Models (LLMs) in various configurations with VLLM.
 
-    .. grid-item-card:: :doc:`SGLang <../components/backends/sglang/README>`
-        :link: ../components/backends/sglang/README
+    .. grid-item-card:: :doc:`SGLang <../backends/sglang/README>`
+        :link: ../backends/sglang/README
         :link-type: doc
 
         Presents examples and reference implementations for deploying Large Language Models (LLMs) in various configurations with SGLang.

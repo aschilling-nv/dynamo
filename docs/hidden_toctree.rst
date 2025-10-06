@@ -43,7 +43,7 @@
    architecture/request_cancellation.md
 
    components/backends/trtllm/multinode/multinode-examples.md
-   components/backends/sglang/docs/multinode-examples.md
+   backends/sglang/multinode-examples.md
 
    examples/README.md
    examples/runtime/hello_world/README.md
