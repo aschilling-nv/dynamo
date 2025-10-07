@@ -205,6 +205,9 @@ def test_request_cancellation_sglang_aggregated(
                 # For streaming, read 5 responses before cancelling
                 if request_type == "chat_completion_stream":
                     read_streaming_responses(cancellable_req, expected_count=5)
+                else:
+                    # Add delay to allow SGLang to start the cancellation monitor
+                    time.sleep(0.5)
 
                 # Now cancel the request
                 cancellable_req.cancel()
@@ -229,7 +232,7 @@ def test_request_cancellation_sglang_aggregated(
 
 @pytest.mark.e2e
 @pytest.mark.sglang
-@pytest.mark.gpu_1
+@pytest.mark.gpu_2
 @pytest.mark.model(FAULT_TOLERANCE_MODEL_NAME)
 def test_request_cancellation_sglang_decode_cancel(
     request, runtime_services, predownload_models
@@ -240,6 +243,8 @@ def test_request_cancellation_sglang_decode_cancel(
     This test verifies that when a request is cancelled by the client during the remote decode phase,
     the system properly handles the cancellation and cleans up resources
     on both the prefill and decode workers in a disaggregated setup.
+
+    Note: This test requires 2 GPUs to run decode and prefill workers on separate GPUs.
     """
 
     # Step 1: Start the frontend
@@ -286,6 +291,9 @@ def test_request_cancellation_sglang_decode_cancel(
 
                 # Read 5 streaming responses (decode phase)
                 read_streaming_responses(cancellable_req, expected_count=5)
+
+                # Add delay to allow SGLang to start the cancellation monitor
+                time.sleep(0.5)
 
                 # Now cancel the request
                 cancellable_req.cancel()
