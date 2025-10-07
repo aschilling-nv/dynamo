@@ -28,6 +28,13 @@ Usage (both patterns supported):
 from __future__ import annotations
 
 
+class distributed_runtime:
+    """DistributedRuntime core metrics"""
+
+    # Total uptime of the DistributedRuntime in seconds
+    UPTIME_SECONDS = "uptime_seconds"
+
+
 class frontend_service:
     """Frontend service metrics (LLM HTTP service)"""
 
@@ -69,21 +76,33 @@ class frontend_service:
     MODEL_MIGRATION_LIMIT = "model_migration_limit"
 
 
-class task_tracker:
-    """Task tracker Prometheus metric name suffixes"""
+class kvbm_connector:
+    """KVBM connector"""
 
-    # Total number of tasks issued/submitted
-    TASKS_ISSUED_TOTAL = "tasks_issued_total"
-    # Total number of tasks started
-    TASKS_STARTED_TOTAL = "tasks_started_total"
-    # Total number of successfully completed tasks
-    TASKS_SUCCESS_TOTAL = "tasks_success_total"
-    # Total number of cancelled tasks
-    TASKS_CANCELLED_TOTAL = "tasks_cancelled_total"
-    # Total number of failed tasks
-    TASKS_FAILED_TOTAL = "tasks_failed_total"
-    # Total number of rejected tasks
-    TASKS_REJECTED_TOTAL = "tasks_rejected_total"
+    # KVBM connector leader
+    KVBM_CONNECTOR_LEADER = "kvbm_connector_leader"
+    # KVBM connector worker
+    KVBM_CONNECTOR_WORKER = "kvbm_connector_worker"
+
+
+class kvrouter:
+    # Number of KV cache events applied to the index (including status)
+    KV_CACHE_EVENTS_APPLIED = "kv_cache_events_applied"
+
+
+class kvstats:
+    """KvStats metrics from LLM workers"""
+
+    # Prefix for all KvStats metrics
+    PREFIX = ""
+    # Number of active KV cache blocks currently in use
+    ACTIVE_BLOCKS = "kvstats_active_blocks"
+    # Total number of KV cache blocks available
+    TOTAL_BLOCKS = "kvstats_total_blocks"
+    # GPU cache usage as a percentage (0.0-1.0)
+    GPU_CACHE_USAGE_PERCENT = "kvstats_gpu_cache_usage_percent"
+    # GPU prefix cache hit rate as a percentage (0.0-1.0)
+    GPU_PREFIX_CACHE_HIT_RATE = "kvstats_gpu_prefix_cache_hit_rate"
 
 
 class labels:
@@ -95,6 +114,15 @@ class labels:
     NAMESPACE = "dynamo_namespace"
     # Label for endpoint identification
     ENDPOINT = "dynamo_endpoint"
+
+
+class name_prefix:
+    """Metric name prefixes used across the metrics system"""
+
+    # Prefix for all Prometheus metric names.
+    COMPONENT = "dynamo_component"
+    # Prefix for frontend service metrics
+    FRONTEND = "dynamo_frontend"
 
 
 class nats_client:
@@ -117,15 +145,6 @@ class nats_client:
     CONNECTION_STATE = "nats_client_connection_state"
 
 
-class name_prefix:
-    """Metric name prefixes used across the metrics system"""
-
-    # Prefix for all Prometheus metric names.
-    COMPONENT = "dynamo_component"
-    # Prefix for frontend service metrics
-    FRONTEND = "dynamo_frontend"
-
-
 class nats_service:
     """NATS service metrics, from the $SRV.STATS.<service_name> requests on NATS server"""
 
@@ -145,31 +164,21 @@ class nats_service:
     ACTIVE_ENDPOINTS = "nats_service_active_endpoints"
 
 
-class distributed_runtime:
-    """DistributedRuntime core metrics"""
+class task_tracker:
+    """Task tracker Prometheus metric name suffixes"""
 
-    # Total uptime of the DistributedRuntime in seconds
-    UPTIME_SECONDS = "uptime_seconds"
-
-
-class kvstats:
-    """KvStats metrics from LLM workers"""
-
-    # Prefix for all KvStats metrics
-    PREFIX = ""
-    # Number of active KV cache blocks currently in use
-    ACTIVE_BLOCKS = "kvstats_active_blocks"
-    # Total number of KV cache blocks available
-    TOTAL_BLOCKS = "kvstats_total_blocks"
-    # GPU cache usage as a percentage (0.0-1.0)
-    GPU_CACHE_USAGE_PERCENT = "kvstats_gpu_cache_usage_percent"
-    # GPU prefix cache hit rate as a percentage (0.0-1.0)
-    GPU_PREFIX_CACHE_HIT_RATE = "kvstats_gpu_prefix_cache_hit_rate"
-
-
-class kvrouter:
-    # Number of KV cache events applied to the index (including status)
-    KV_CACHE_EVENTS_APPLIED = "kv_cache_events_applied"
+    # Total number of tasks issued/submitted
+    TASKS_ISSUED_TOTAL = "tasks_issued_total"
+    # Total number of tasks started
+    TASKS_STARTED_TOTAL = "tasks_started_total"
+    # Total number of successfully completed tasks
+    TASKS_SUCCESS_TOTAL = "tasks_success_total"
+    # Total number of cancelled tasks
+    TASKS_CANCELLED_TOTAL = "tasks_cancelled_total"
+    # Total number of failed tasks
+    TASKS_FAILED_TOTAL = "tasks_failed_total"
+    # Total number of rejected tasks
+    TASKS_REJECTED_TOTAL = "tasks_rejected_total"
 
 
 class work_handler:
@@ -190,12 +199,3 @@ class work_handler:
     ERRORS_TOTAL = "errors_total"
     # Label name for error type classification
     ERROR_TYPE_LABEL = "error_type"
-
-
-class kvbm_connector:
-    """KVBM connector"""
-
-    # KVBM connector leader
-    KVBM_CONNECTOR_LEADER = "kvbm_connector_leader"
-    # KVBM connector worker
-    KVBM_CONNECTOR_WORKER = "kvbm_connector_worker"

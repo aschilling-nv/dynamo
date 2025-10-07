@@ -6,4 +6,3 @@
 //! This crate provides tools to generate code from Rust sources to other languages.
 
 pub mod prometheus_parser;
-pub mod python_generator;
