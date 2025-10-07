@@ -93,13 +93,13 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         return {k: v for k, v in param_mapping.items() if v is not None}
 
     async def generate(
-        self, request: Dict[str, Any], context: Optional[Context] = None
+        self, request: Dict[str, Any], context: Context
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Generate response in aggregated or disaggregated mode.
 
         Args:
             request: Request dict with input and sampling parameters.
-            context: Optional context object for cancellation handling.
+            context: Context object for cancellation handling.
 
         Yields:
             Response dicts with token_ids or OpenAI-formatted chunks.
@@ -107,8 +107,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         Raises:
             RuntimeError: If no bootstrap info received from prefill worker.
         """
-        if context:
-            logging.debug(f"New Request ID: {context.id()}")
+        logging.debug(f"New Request ID: {context.id()}")
         sampling_params = self._build_sampling_params(request)
         input_param = self._get_input_param(request)
 
@@ -127,7 +126,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 bootstrap_info = info.data()
                 break
 
-            if context and (context.is_stopped() or context.is_killed()):
+            if context.is_stopped() or context.is_killed():
                 logging.debug(f"Aborted Request ID: {context.id()}")
                 return
 
@@ -165,13 +164,13 @@ class DecodeWorkerHandler(BaseWorkerHandler):
     async def _process_token_stream(
         self,
         stream_source: AsyncGenerator[Dict[str, Any], None],
-        context: Optional[Context] = None,
+        context: Context,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Process token-based stream output.
 
         Args:
             stream_source: Async generator from engine.async_generate.
-            context: Optional context object for cancellation handling.
+            context: Context object for cancellation handling.
 
         Yields:
             Dict with token_ids and optional finish_reason.
@@ -180,112 +179,88 @@ class DecodeWorkerHandler(BaseWorkerHandler):
             ValueError: If response missing output_ids.
         """
         num_output_tokens_so_far = 0
-        cancellation_task = None
 
-        async for res in stream_source:
-            # Extract SGLang request ID from the first response and start cancellation monitoring
-            if context and cancellation_task is None:
-                meta_info = res.get("meta_info", {})
-                sglang_request_id = meta_info.get("id")
-                if sglang_request_id:
-                    # Now we have the request ID, start the cancellation monitor
-                    cancellation_context = self._cancellation_monitor(
-                        sglang_request_id, context
-                    )
-                    cancellation_task = await cancellation_context.__aenter__()
+        # Use Future pattern for request ID - will be set when first response arrives
+        async with self._cancellation_monitor(context) as request_id_future:
+            async for res in stream_source:
+                # Extract SGLang request ID from the first response and set the future
+                if not request_id_future.done():
+                    meta_info = res.get("meta_info", {})
+                    sglang_request_id = meta_info.get("id")
+                    if sglang_request_id:
+                        logging.debug(f"New Request ID: {sglang_request_id}")
+                        request_id_future.set_result(sglang_request_id)
 
-            # Check for cancellation on each iteration
-            if context and (context.is_stopped() or context.is_killed()):
-                logging.debug(f"Aborted Request ID: {context.id()}")
-                break
+                # Note: No explicit cancellation checks needed here.
+                # When abort_request is called by the cancellation monitor,
+                # SGLang will terminate this async generator automatically.
 
-            finish_reason = res["meta_info"]["finish_reason"]
-            if finish_reason:
-                out = {"token_ids": [], "finish_reason": finish_reason["type"]}
-            else:
-                try:
-                    next_total_toks = len(res["output_ids"])
-                except KeyError:
-                    raise ValueError(
-                        f"Missing 'output_ids' in response. Response keys: {list(res.keys())}"
-                    )
-                out = {"token_ids": res["output_ids"][num_output_tokens_so_far:]}
-                num_output_tokens_so_far = next_total_toks
+                finish_reason = res["meta_info"]["finish_reason"]
+                if finish_reason:
+                    out = {"token_ids": [], "finish_reason": finish_reason["type"]}
+                else:
+                    try:
+                        next_total_toks = len(res["output_ids"])
+                    except KeyError:
+                        raise ValueError(
+                            f"Missing 'output_ids' in response. Response keys: {list(res.keys())}"
+                        )
+                    out = {"token_ids": res["output_ids"][num_output_tokens_so_far:]}
+                    num_output_tokens_so_far = next_total_toks
 
-            yield out
-
-        # Clean up cancellation monitor if it was created
-        if cancellation_task is not None:
-            try:
-                await cancellation_context.__aexit__(None, None, None)
-            except Exception as e:
-                logging.error(
-                    f"Error cleaning up cancellation monitor for token stream: {e}"
-                )
+                yield out
 
     async def _process_text_stream(
         self,
         stream_source: AsyncGenerator[Dict[str, Any], None],
-        context: Optional[Context] = None,
+        context: Context,
     ) -> AsyncGenerator[Dict[str, Any], None]:
         """Process text-based stream output in OpenAI format.
 
         Args:
             stream_source: Async generator from engine.async_generate.
-            context: Optional context object for cancellation handling.
+            context: Context object for cancellation handling.
 
         Yields:
             OpenAI-formatted chat completion chunk dicts.
         """
         count = 0
-        cancellation_task = None
 
-        async for res in stream_source:
-            # Extract SGLang request ID from the first response and start cancellation monitoring
-            if context and cancellation_task is None:
-                meta_info = res.get("meta_info", {})
-                sglang_request_id = meta_info.get("id")
-                if sglang_request_id:
-                    # Now we have the request ID, start the cancellation monitor
-                    cancellation_context = self._cancellation_monitor(
-                        sglang_request_id, context
-                    )
-                    cancellation_task = await cancellation_context.__aenter__()
+        # Use Future pattern for request ID - will be set when first response arrives
+        async with self._cancellation_monitor(context) as request_id_future:
+            async for res in stream_source:
+                # Extract SGLang request ID from the first response and set the future
+                if not request_id_future.done():
+                    meta_info = res.get("meta_info", {})
+                    sglang_request_id = meta_info.get("id")
+                    if sglang_request_id:
+                        logging.debug(f"New Request ID: {sglang_request_id}")
+                        request_id_future.set_result(sglang_request_id)
 
-            # Check for cancellation on each iteration
-            if context and (context.is_stopped() or context.is_killed()):
-                logging.debug(f"Aborted Request ID: {context.id()}")
-                break
+                # Note: No explicit cancellation checks needed here.
+                # When abort_request is called by the cancellation monitor,
+                # SGLang will terminate this async generator automatically.
 
-            index = res.get("index", 0)
-            text = res.get("text", "")
+                index = res.get("index", 0)
+                text = res.get("text", "")
 
-            finish_reason = res["meta_info"]["finish_reason"]
-            finish_reason_type = finish_reason["type"] if finish_reason else None
-            next_count = len(text)
-            delta = text[count:]
+                finish_reason = res["meta_info"]["finish_reason"]
+                finish_reason_type = finish_reason["type"] if finish_reason else None
+                next_count = len(text)
+                delta = text[count:]
 
-            choice_data = {
-                "index": index,
-                "delta": {"role": "assistant", "content": delta},
-                "finish_reason": finish_reason_type,
-            }
+                choice_data = {
+                    "index": index,
+                    "delta": {"role": "assistant", "content": delta},
+                    "finish_reason": finish_reason_type,
+                }
 
-            response = {
-                "id": res["meta_info"]["id"],
-                "created": int(time.time()),
-                "choices": [choice_data],
-                "model": self.config.server_args.served_model_name,
-                "object": "chat.completion.chunk",
-            }
-            yield response
-            count = next_count
-
-        # Clean up cancellation monitor if it was created
-        if cancellation_task is not None:
-            try:
-                await cancellation_context.__aexit__(None, None, None)
-            except Exception as e:
-                logging.error(
-                    f"Error cleaning up cancellation monitor for text stream: {e}"
-                )
+                response = {
+                    "id": res["meta_info"]["id"],
+                    "created": int(time.time()),
+                    "choices": [choice_data],
+                    "model": self.config.server_args.served_model_name,
+                    "object": "chat.completion.chunk",
+                }
+                yield response
+                count = next_count

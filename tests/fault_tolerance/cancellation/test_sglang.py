@@ -25,13 +25,13 @@ logger = logging.getLogger(__name__)
 class DynamoWorkerProcess(ManagedProcess):
     """Process manager for Dynamo worker with SGLang backend"""
 
-    def __init__(self, request, mode: str = "null"):
+    def __init__(self, request, mode: str = "agg"):
         """
         Initialize SGLang worker process.
 
         Args:
             request: pytest request object
-            mode: One of "null", "prefill", "decode"
+            mode: One of "agg", "prefill", "decode"
         """
         command = [
             "python3",
@@ -49,7 +49,7 @@ class DynamoWorkerProcess(ManagedProcess):
         ]
 
         # Add mode-specific arguments
-        if mode == "null":
+        if mode == "agg":
             # Aggregated mode - add skip-tokenizer-init like the serve test
             command.append("--skip-tokenizer-init")
         else:
@@ -79,7 +79,7 @@ class DynamoWorkerProcess(ManagedProcess):
         elif mode == "decode":
             port = "8081"
             health_check_urls = [(f"http://localhost:{port}/health", self.is_ready)]
-        else:  # null (aggregated mode)
+        else:  # agg (aggregated mode)
             port = "8081"
 
         # Set debug logging environment
@@ -94,7 +94,7 @@ class DynamoWorkerProcess(ManagedProcess):
             env["CUDA_VISIBLE_DEVICES"] = "1"  # Use GPU 1 for decode worker
         elif mode == "prefill":
             env["CUDA_VISIBLE_DEVICES"] = "0"  # Use GPU 0 for prefill worker
-        # For null (aggregated) mode, use default GPU assignment
+        # For agg (aggregated) mode, use default GPU assignment
 
         # Set log directory based on worker type
         log_dir = f"{request.node.name}_{mode}_worker"
@@ -159,7 +159,7 @@ def test_request_cancellation_sglang_aggregated(
 
     This test verifies that when a request is cancelled by the client,
     the system properly handles the cancellation and cleans up resources
-    on the worker side in aggregated (null) mode.
+    on the worker side in aggregated (agg) mode.
     """
 
     # Step 1: Start the frontend
@@ -167,10 +167,7 @@ def test_request_cancellation_sglang_aggregated(
         logger.info("Frontend started successfully")
 
         # Step 2: Start an aggregated worker
-        logger.info("Starting aggregated worker...")
-        worker = DynamoWorkerProcess(request, mode="null")
-
-        with worker:
+        with DynamoWorkerProcess(request, mode="agg") as worker:
             logger.info(f"Aggregated Worker PID: {worker.get_pid()}")
 
             # TODO: Why wait after worker ready fixes frontend 404 / 500 flakiness?
@@ -252,17 +249,11 @@ def test_request_cancellation_sglang_decode_cancel(
         logger.info("Frontend started successfully")
 
         # Step 2: Start the decode worker
-        logger.info("Starting decode worker...")
-        decode_worker = DynamoWorkerProcess(request, mode="decode")
-
-        with decode_worker:
+        with DynamoWorkerProcess(request, mode="decode") as decode_worker:
             logger.info(f"Decode Worker PID: {decode_worker.get_pid()}")
 
             # Step 3: Start the prefill worker
-            logger.info("Starting prefill worker...")
-            prefill_worker = DynamoWorkerProcess(request, mode="prefill")
-
-            with prefill_worker:
+            with DynamoWorkerProcess(request, mode="prefill") as prefill_worker:
                 logger.info(f"Prefill Worker PID: {prefill_worker.get_pid()}")
 
                 # TODO: Why wait after worker ready fixes frontend 404 / 500 flakiness?
