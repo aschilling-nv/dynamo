@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-VLLM_REF="v0.10.2"
+VLLM_REF="v0.11.0"
 
 # Basic Configurations
 ARCH=$(uname -m)
@@ -130,10 +130,6 @@ cd $INSTALLATION_DIR
 git clone $VLLM_GIT_URL vllm
 cd vllm
 git checkout $VLLM_REF
-
-# TODO remove in future vLLM release, re-instate ignore torch script
-# https://github.com/vllm-project/vllm/pull/24729
-GIT_COMMITTER_NAME="Container Build" GIT_COMMITTER_EMAIL="container@buildkitsandbox.local" git cherry-pick 740f064
 
 
 echo "\n=== Installing vLLM & FlashInfer ==="
