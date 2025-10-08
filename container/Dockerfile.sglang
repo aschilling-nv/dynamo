@@ -216,8 +216,10 @@ RUN uv pip install \
     /opt/dynamo/wheelhouse/ai_dynamo_runtime*cp312*.whl \
     /opt/dynamo/wheelhouse/ai_dynamo*any.whl \
     /opt/dynamo/wheelhouse/nixl/nixl*.whl \
-    /opt/dynamo/benchmarks && \
-    rm -rf /opt/dynamo/benchmarks
+    && cd /opt/dynamo/benchmarks \
+    && uv pip install . \
+    && cd - \
+    && rm -rf /opt/dynamo/benchmarks
 
 # Install common and test dependencies
 RUN --mount=type=bind,source=./container/deps/requirements.txt,target=/tmp/requirements.txt \
@@ -238,13 +240,7 @@ COPY tests /workspace/tests
 COPY benchmarks /workspace/benchmarks
 COPY examples /workspace/examples
 COPY deploy /workspace/deploy
-RUN uv pip install /workspace/benchmarks
 
-# Copy benchmarks, backends and tests for CI
-COPY tests /workspace/tests
-COPY benchmarks /workspace/benchmarks
-COPY deploy /workspace/deploy
-COPY components/backends/sglang /workspace/components/backends/sglang
 # Copy attribution files
 COPY ATTRIBUTION* LICENSE /workspace/
 
