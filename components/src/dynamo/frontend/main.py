@@ -11,12 +11,6 @@
 #
 # Pass `--interactive` or `-i` for text chat instead of HTTP server.
 #
-# For static mode (no etcd auto-discovery):
-# - python -m dynamo.frontend --model-name Qwen3-0.6B-Q8_0.gguf --model-path ~/llms/Qwen3-0.6B --static-endpoint dynamo.backend.generate
-# Worker example:
-# - cd lib/bindings/python/examples/hello_world
-# - python server_sglang_static.py
-#
 # For TLS:
 # - python -m dynamo.frontend --http-port 8443 --tls-cert-path cert.pem --tls-key-path key.pem
 #
@@ -27,6 +21,7 @@ import logging
 import os
 import pathlib
 import re
+import signal
 
 import uvloop
 
@@ -232,7 +227,15 @@ async def async_main():
         if prefix:
             os.environ["DYN_METRICS_PREFIX"] = flags.metrics_prefix
 
-    runtime = DistributedRuntime(asyncio.get_running_loop(), is_static)
+    loop = asyncio.get_running_loop()
+
+    runtime = DistributedRuntime(loop, is_static)
+
+    def signal_handler():
+        asyncio.create_task(graceful_shutdown(runtime))
+
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        loop.add_signal_handler(sig, signal_handler)
 
     if flags.router_mode == "kv":
         router_mode = RouterMode.KV
@@ -293,6 +296,10 @@ async def async_main():
             await run_input(runtime, "http", engine)
     except asyncio.exceptions.CancelledError:
         pass
+
+
+async def graceful_shutdown(runtime):
+    runtime.shutdown()
 
 
 def main():
