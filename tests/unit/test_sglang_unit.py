@@ -20,7 +20,6 @@ pytestmark = [
     pytest.mark.unit,
     pytest.mark.sglang,
     pytest.mark.gpu_1,
-    pytest.mark.pre_merge,
 ]
 
 

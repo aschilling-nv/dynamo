@@ -20,7 +20,6 @@ pytestmark = [
     pytest.mark.unit,
     pytest.mark.trtllm_marker,
     pytest.mark.gpu_1,
-    pytest.mark.pre_merge,
 ]
 
 
