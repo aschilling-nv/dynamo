@@ -119,9 +119,12 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                 token_ids = request["token_ids"]
                 # Call router's best_worker_id endpoint - need to await the iterator properly
                 stream = await self.prefill_router_client.generate(token_ids)
-                
+
                 result = await anext(stream)
-                worker_id, overlap = result.data()  # Returns tuple (worker_id, overlap_amount)
+                (
+                    worker_id,
+                    overlap,
+                ) = result.data()  # Returns tuple (worker_id, overlap_amount)
                 logging.info(f"Best prefill worker ID: {worker_id}, overlap: {overlap}")
 
                 prefill_stream = await self.prefill_client.direct(

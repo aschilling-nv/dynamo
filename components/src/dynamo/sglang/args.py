@@ -108,7 +108,7 @@ class DynamoArgs:
     endpoint: str
     migration_limit: int
 
-    # disaggregation specific options 
+    # disaggregation specific options
     enable_prefill_routing: bool = False
 
     # tool and reasoning parser options

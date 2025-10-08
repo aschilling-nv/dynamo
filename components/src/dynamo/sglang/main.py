@@ -80,7 +80,9 @@ async def init(runtime: DistributedRuntime, config: Config):
     prefill_router_client = None
     if config.serving_mode == DisaggregationMode.DECODE:
         if config.dynamo_args.enable_prefill_routing:
-            logging.info("Initializing prefill router client. Prefill worker will be chosen via KV aware routing")
+            logging.info(
+                "Initializing prefill router client. Prefill worker will be chosen via KV aware routing"
+            )
             prefill_router_client = (
                 await runtime.namespace(dynamo_args.namespace)
                 .component("router")
@@ -102,7 +104,9 @@ async def init(runtime: DistributedRuntime, config: Config):
     # Readiness gate: requests wait until model is registered
     ready_event = asyncio.Event()
 
-    handler = DecodeWorkerHandler(component, engine, config, publisher, prefill_client, prefill_router_client)
+    handler = DecodeWorkerHandler(
+        component, engine, config, publisher, prefill_client, prefill_router_client
+    )
 
     health_check_payload = SglangHealthCheckPayload(engine).to_dict()
 
