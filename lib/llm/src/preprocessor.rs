@@ -352,9 +352,8 @@ impl OpenAIPreprocessor {
                                         .encode(text)
                                         .map(|encoded| encoded.token_ids().to_vec())
                                 })
-                                .flatten()
                                 .collect::<Result<Vec<_>>>()?;
-                            builder.token_ids(token_batches);
+                            builder.token_ids(token_batches.iter().flatten().cloned().collect());
                         }
                     }
                 }
