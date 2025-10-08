@@ -124,6 +124,16 @@ spec:
           - --mpi-run-ssh-secret-name={{ .Values.dynamo.mpiRun.secretName }}
           - --mpi-run-ssh-secret-namespace={{ .Release.Namespace }}
         {{- end }}
+        {{- if .Values.dynamo.dgdr.onlineProfilingImage }}
+          - --online-profiling-image={{ .Values.dynamo.dgdr.onlineProfilingImage }}
+        {{- end }}
+        {{- if .Values.dynamo.dgdr.aicProfilingImage }}
+          - --aic-profiling-image={{ .Values.dynamo.dgdr.aicProfilingImage }}
+        {{- end }}
+        {{- if not .Values.namespaceRestriction.enabled }}
+          - --planner-cluster-role-name={{ include "dynamo-operator.fullname" . }}-planner
+          - --dgdr-profiling-cluster-role-name={{ include "dynamo-operator.fullname" . }}-dgdr-profiling
+        {{- end }}
         command:
         - /manager
         env:

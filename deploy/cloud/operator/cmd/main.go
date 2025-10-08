@@ -60,6 +60,7 @@ import (
 	"github.com/ai-dynamo/dynamo/deploy/cloud/operator/internal/controller"
 	commonController "github.com/ai-dynamo/dynamo/deploy/cloud/operator/internal/controller_common"
 	"github.com/ai-dynamo/dynamo/deploy/cloud/operator/internal/etcd"
+	"github.com/ai-dynamo/dynamo/deploy/cloud/operator/internal/rbac"
 	"github.com/ai-dynamo/dynamo/deploy/cloud/operator/internal/secret"
 	"github.com/ai-dynamo/dynamo/deploy/cloud/operator/internal/secrets"
 	istioclientsetscheme "istio.io/client-go/pkg/clientset/versioned/scheme"
@@ -137,6 +138,10 @@ func main() {
 	var prometheusEndpoint string
 	var mpiRunSecretName string
 	var mpiRunSecretNamespace string
+	var onlineProfilingImage string
+	var aicProfilingImage string
+	var plannerClusterRoleName string
+	var dgdrProfilingClusterRoleName string
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
@@ -175,6 +180,14 @@ func main() {
 		"Name of the secret containing the SSH key for MPI Run (required)")
 	flag.StringVar(&mpiRunSecretNamespace, "mpi-run-ssh-secret-namespace", "",
 		"Namespace where the MPI SSH secret is located (required)")
+	flag.StringVar(&onlineProfilingImage, "online-profiling-image", "",
+		"Container image to use for online profiling jobs (for DynamoGraphDeploymentRequest)")
+	flag.StringVar(&aicProfilingImage, "aic-profiling-image", "",
+		"Container image to use for AIC profiling jobs (for DynamoGraphDeploymentRequest)")
+	flag.StringVar(&plannerClusterRoleName, "planner-cluster-role-name", "",
+		"Name of the ClusterRole for planner (cluster-wide mode only)")
+	flag.StringVar(&dgdrProfilingClusterRoleName, "dgdr-profiling-cluster-role-name", "",
+		"Name of the ClusterRole for DGDR profiling jobs (cluster-wide mode only)")
 	opts := zap.Options{
 		Development: true,
 	}
@@ -224,6 +237,10 @@ func main() {
 		PrometheusEndpoint: prometheusEndpoint,
 		MpiRun: commonController.MpiRunConfig{
 			SecretName: mpiRunSecretName,
+		},
+		RBAC: commonController.RBACConfig{
+			PlannerClusterRoleName:       plannerClusterRoleName,
+			DGDRProfilingClusterRoleName: dgdrProfilingClusterRoleName,
 		},
 	}
 
@@ -421,6 +438,9 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Initialize RBAC manager for cross-namespace resource management
+	rbacManager := rbac.NewManager(mgr.GetClient())
+
 	if err = (&controller.DynamoGraphDeploymentReconciler{
 		Client:                mgr.GetClient(),
 		Recorder:              mgr.GetEventRecorderFor("dynamographdeployment"),
@@ -428,8 +448,21 @@ func main() {
 		DockerSecretRetriever: dockerSecretRetriever,
 		ScaleClient:           scaleClient,
 		MPISecretReplicator:   mpiSecretReplicator,
+		RBACMgr:               rbacManager,
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DynamoGraphDeployment")
+		os.Exit(1)
+	}
+
+	if err = (&controller.DynamoGraphDeploymentRequestReconciler{
+		Client:               mgr.GetClient(),
+		Recorder:             mgr.GetEventRecorderFor("dynamographdeploymentrequest"),
+		OnlineProfilingImage: onlineProfilingImage,
+		AICProfilingImage:    aicProfilingImage,
+		Config:               ctrlConfig,
+		RBACMgr:              rbacManager,
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DynamoGraphDeploymentRequest")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
