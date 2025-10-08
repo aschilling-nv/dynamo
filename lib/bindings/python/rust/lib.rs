@@ -101,7 +101,7 @@ fn get_span_for_direct_context(
 /// import the module.
 #[pymodule]
 fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
-    logging::init();
+    // logging::init() moved to DistributedRuntime::new() where Tokio runtime is available
     m.add_function(wrap_pyfunction!(llm::kv::compute_block_hash_for_seq_py, m)?)?;
     m.add_function(wrap_pyfunction!(log_message, m)?)?;
     m.add_function(wrap_pyfunction!(register_llm, m)?)?;
@@ -361,6 +361,13 @@ impl DistributedRuntime {
         .map_err(to_pyerr)?;
 
         let runtime = worker.runtime().clone();
+        // runtime.
+        
+        // Initialize logging now that Tokio runtime is available
+        // Must be done in a block_on context so the runtime is active
+        runtime.secondary().block_on(async {
+            rs::logging::init();
+        });
 
         let inner =
             if is_static {

@@ -280,9 +280,6 @@ impl TraceParent {
 // as a first pass, we can potentially have a subroutine that intializes a traceparent as well, some of the fields are read from the headers and some are read from otel extension
 // we can later figure out how to ship all the details in the otel context
 pub fn make_request_span<B>(req: &Request<B>) -> Span {
-    // Attempt lazy OTEL initialization on first request
-    lazy_init_otel();
-    
     let method = req.method();
     let uri = req.uri();
     let version = format!("{:?}", req.version());
@@ -399,9 +396,6 @@ pub fn create_handle_payload_span_from_nats_headers(
 ) -> Span {
     println!("[DEBUG] create_handle_payload_span_from_nats_headers: ENTRY");
     println!("[DEBUG]   component={}, endpoint={}, namespace={}, instance_id={}", component, endpoint, namespace, instance_id);
-    
-    // Attempt lazy OTEL initialization on NATS message handling
-    lazy_init_otel();
     
     // Extract the trace context and individual IDs from headers
     println!("[DEBUG] create_handle_payload_span_from_nats_headers: calling extract_otel_context_from_nats_headers");
@@ -662,9 +656,6 @@ pub fn create_client_request_span(
 ) -> Span {
     println!("[DEBUG] create_client_request_span: ENTRY");
     println!("[DEBUG]   operation={}, request_id={}, instance_id={:?}", operation, request_id, instance_id);
-    
-    // Attempt lazy OTEL initialization
-    lazy_init_otel();
     
     // Create the span based on whether we have trace context and instance_id
     let span = if let Some(ctx) = trace_context {
@@ -992,16 +983,11 @@ pub fn lazy_init_otel() {
 }
 
 /// Initialize the logger
+/// This should be called when Tokio runtime is available (e.g., in DistributedRuntime::new())
 pub fn init() {
     println!("init called");
     
-    if jsonl_logging_enabled() {
-        // For JSONL logging, defer initialization until Tokio runtime is available
-        println!("JSONL logging enabled - deferring initialization until runtime is available");
-        return;
-    }
-    
-    // For non-JSONL logging, initialize immediately
+    // Initialize logging (works for both JSONL and non-JSONL now)
     INIT.call_once(|| {
         if let Err(e) = setup_logging() {
             eprintln!("Failed to initialize logging: {}", e);
