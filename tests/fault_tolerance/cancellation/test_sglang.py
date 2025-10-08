@@ -206,6 +206,9 @@ def test_request_cancellation_sglang_aggregated(
                     # Add delay to allow SGLang to start the cancellation monitor
                     time.sleep(0.5)
 
+                # Add delay to allow SGLang to start the cancellation monitor, CI flakiness fix
+                time.sleep(2)
+
                 # Now cancel the request
                 cancellable_req.cancel()
                 logger.info(f"Cancelled request ID: {request_id}")
