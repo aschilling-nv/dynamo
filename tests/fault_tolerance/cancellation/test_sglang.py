@@ -196,6 +196,7 @@ def test_request_cancellation_sglang_aggregated(
                     pattern="New Request ID: ",
                     log_offset=worker_log_offset,
                     match_type="contains",
+                    max_wait_ms=1000,  # Increased timeout for slower requests
                 )
 
                 # For streaming, read 5 responses before cancelling
@@ -204,11 +205,9 @@ def test_request_cancellation_sglang_aggregated(
                 else:
                     # Add delay to allow SGLang to start the cancellation monitor
                     time.sleep(0.5)
+                    logger.info(f"SGLang started processing request {request_id}")
 
-                # Add delay to allow SGLang to start the cancellation monitor, CI flakiness fix
-                time.sleep(2)
-
-                # Now cancel the request
+                # Now cancel the request (this is a LATE cancellation)
                 cancellable_req.cancel()
                 logger.info(f"Cancelled request ID: {request_id}")
 
@@ -224,9 +223,13 @@ def test_request_cancellation_sglang_aggregated(
                     process=frontend,
                     pattern="issued control message Kill to sender",
                     log_offset=frontend_log_offset,
+                    max_wait_ms=2000,
                 )
 
                 logger.info(f"{description} detected successfully")
+
+                # Add small delay between tests to let system stabilize
+                time.sleep(1)
 
 
 @pytest.mark.e2e

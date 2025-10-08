@@ -165,7 +165,7 @@ class BaseWorkerHandler(ABC):
                     )
                     is_prefill = self.serving_mode == DisaggregationMode.PREFILL
                     logging.info(
-                        f"Aborted {'Prefill ' if is_prefill else ''}Request ID: {sglang_request_id}"
+                        f"Aborted {'Prefill ' if is_prefill else ''}Request ID: {context.id()}"
                     )
                 except Exception as e:
                     logging.error(

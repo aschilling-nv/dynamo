@@ -108,7 +108,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         Raises:
             RuntimeError: If no bootstrap info received from prefill worker.
         """
-        logging.debug(f"New Request Context ID: {context.id()}")
+        logging.debug(f"New Request ID: {context.id()}")
         sampling_params = self._build_sampling_params(request)
         input_param = self._get_input_param(request)
 
@@ -190,7 +190,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                     meta_info = res.get("meta_info", {})
                     sglang_request_id = meta_info.get("id")
                     if sglang_request_id:
-                        logging.debug(f"New Request ID: {sglang_request_id}")
+                        logging.debug(f"New Request ID: {context.id()}")
                         request_id_future.set_result(sglang_request_id)
 
                 # Note: No explicit cancellation checks needed here.
@@ -237,7 +237,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
                     meta_info = res.get("meta_info", {})
                     sglang_request_id = meta_info.get("id")
                     if sglang_request_id:
-                        logging.debug(f"New Request ID: {sglang_request_id}")
+                        logging.debug(f"New Request ID: {context.id()}")
                         request_id_future.set_result(sglang_request_id)
 
                 # Note: No explicit cancellation checks needed here.
