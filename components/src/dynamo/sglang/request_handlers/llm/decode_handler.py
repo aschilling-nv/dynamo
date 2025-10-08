@@ -108,7 +108,7 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         Raises:
             RuntimeError: If no bootstrap info received from prefill worker.
         """
-        logging.debug(f"New Request ID: {context.id()}")
+        logging.debug(f"New Request Context ID: {context.id()}")
         sampling_params = self._build_sampling_params(request)
         input_param = self._get_input_param(request)
 
