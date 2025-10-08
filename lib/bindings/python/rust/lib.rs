@@ -14,7 +14,7 @@ use std::path::PathBuf;
 use std::time::Duration;
 use std::{fmt::Display, sync::Arc};
 use tokio::sync::Mutex;
-use tracing::{Instrument, info_span};
+use tracing::Instrument;
 
 use dynamo_runtime::{
     self as rs, logging,
@@ -64,35 +64,18 @@ static INIT: OnceCell<()> = OnceCell::new();
 
 const DEFAULT_ANNOTATED_SETTING: Option<bool> = Some(true);
 
-// Helper to create client span - always emit spans for consistency
-fn create_client_span(
-    operation: &str,
-    request_id: &str,
-    trace_context: Option<&dynamo_runtime::logging::DistributedTraceContext>,
-) -> tracing::Span {
-    if let Some(ctx) = trace_context {
-        info_span!(
-            "client_request",
-            operation = operation,
-            request_id = request_id,
-            trace_id = ctx.trace_id.as_str(),
-            parent_id = ctx.span_id.as_str(),
-            x_request_id = ctx.x_request_id.as_deref().unwrap_or(""),
-            x_dynamo_request_id = ctx.x_dynamo_request_id.as_deref().unwrap_or(""),
-            tracestate = ctx.tracestate.as_deref().unwrap_or("")
-        )
-    } else {
-        info_span!(
-            "client_request",
-            operation = operation,
-            request_id = request_id,
-        )
-    }
-}
-
 // Helper to get appropriate span for instrumentation - always emit spans
 fn get_span_for_context(context: &context::Context, operation: &str) -> tracing::Span {
-    create_client_span(operation, context.inner().id(), context.trace_context())
+    println!("[DEBUG] get_span_for_context: CALLED");
+    println!("[DEBUG]   operation={}, request_id={}", operation, context.inner().id());
+    println!("[DEBUG]   has_trace_context={}", context.trace_context().is_some());
+    
+    logging::create_client_request_span(
+        operation,
+        context.inner().id(),
+        context.trace_context(),
+        None,
+    )
 }
 
 // Helper to create span for direct method with instance_id
@@ -101,26 +84,16 @@ fn get_span_for_direct_context(
     operation: &str,
     instance_id: &str,
 ) -> tracing::Span {
-    if let Some(trace_ctx) = context.trace_context() {
-        info_span!(
-            "client_request",
-            operation = operation,
-            request_id = context.inner().id(),
-            instance_id = instance_id,
-            trace_id = trace_ctx.trace_id.as_str(),
-            parent_id = trace_ctx.span_id.as_str(),
-            x_request_id = trace_ctx.x_request_id.as_deref().unwrap_or(""),
-            x_dynamo_request_id = trace_ctx.x_dynamo_request_id.as_deref().unwrap_or(""),
-            tracestate = trace_ctx.tracestate.as_deref().unwrap_or("")
-        )
-    } else {
-        info_span!(
-            "client_request",
-            operation = operation,
-            request_id = context.inner().id(),
-            instance_id = instance_id,
-        )
-    }
+    println!("[DEBUG] get_span_for_direct_context: CALLED");
+    println!("[DEBUG]   operation={}, request_id={}, instance_id={}", operation, context.inner().id(), instance_id);
+    println!("[DEBUG]   has_trace_context={}", context.trace_context().is_some());
+    
+    logging::create_client_request_span(
+        operation,
+        context.inner().id(),
+        context.trace_context(),
+        Some(instance_id),
+    )
 }
 
 /// A Python module implemented in Rust. The name of this function must match
