@@ -161,7 +161,7 @@ def test_request_cancellation_sglang_aggregated(
     the system properly handles the cancellation and cleans up resources
     on the worker side in aggregated (agg) mode.
     """
-
+    logger.info("Sanity check if latest test is getting executed")
     # Step 1: Start the frontend
     with DynamoFrontendProcess(request) as frontend:
         logger.info("Frontend started successfully")
@@ -169,7 +169,6 @@ def test_request_cancellation_sglang_aggregated(
         # Step 2: Start an aggregated worker
         with DynamoWorkerProcess(request, mode="agg") as worker:
             logger.info(f"Aggregated Worker PID: {worker.get_pid()}")
-
             # TODO: Why wait after worker ready fixes frontend 404 / 500 flakiness?
             time.sleep(2)
 
