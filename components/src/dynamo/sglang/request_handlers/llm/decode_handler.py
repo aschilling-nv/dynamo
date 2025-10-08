@@ -1,6 +1,7 @@
 # SPDX-FileCopyrightText: Copyright (c) 2025 NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 # SPDX-License-Identifier: Apache-2.0
 
+import asyncio
 import logging
 import time
 from typing import Any, AsyncGenerator, Dict, Optional
@@ -181,7 +182,8 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         num_output_tokens_so_far = 0
 
         # Use Future pattern for request ID - will be set when first response arrives
-        async with self._cancellation_monitor(context) as request_id_future:
+        request_id_future = asyncio.Future()
+        async with self._cancellation_monitor(request_id_future, context):
             async for res in stream_source:
                 # Extract SGLang request ID from the first response and set the future
                 if not request_id_future.done():
@@ -227,7 +229,8 @@ class DecodeWorkerHandler(BaseWorkerHandler):
         count = 0
 
         # Use Future pattern for request ID - will be set when first response arrives
-        async with self._cancellation_monitor(context) as request_id_future:
+        request_id_future = asyncio.Future()
+        async with self._cancellation_monitor(request_id_future, context):
             async for res in stream_source:
                 # Extract SGLang request ID from the first response and set the future
                 if not request_id_future.done():

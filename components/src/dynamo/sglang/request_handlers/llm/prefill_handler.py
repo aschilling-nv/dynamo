@@ -84,7 +84,8 @@ class PrefillWorkerHandler(BaseWorkerHandler):
             context: Context object for cancellation handling.
         """
         # Use Future pattern for request ID - will be set when first response arrives
-        async with self._cancellation_monitor(context) as request_id_future:
+        request_id_future = asyncio.Future()
+        async with self._cancellation_monitor(request_id_future, context):
             async for res in results:
                 # Extract SGLang request ID from the first response and set the future
                 if not request_id_future.done():

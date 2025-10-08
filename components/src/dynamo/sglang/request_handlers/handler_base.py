@@ -190,24 +190,22 @@ class BaseWorkerHandler(ABC):
 
     @asynccontextmanager
     async def _cancellation_monitor(
-        self, context: Context
-    ) -> AsyncGenerator[asyncio.Future, None]:
+        self, request_id_future: asyncio.Future, context: Context
+    ) -> AsyncGenerator[asyncio.Task, None]:
         """
         Context manager for monitoring request cancellation.
         Automatically creates a background task to monitor for cancellation and
         cleans it up when the context exits.
 
         Args:
+            request_id_future: Future that will be set with the SGLang request ID
+                              when the first response arrives.
             context: Context object for cancellation handling
 
         Yields:
-            asyncio.Future: A future that should be set with the SGLang request ID
-                           when the first response arrives
+            asyncio.Task: The cancellation monitoring task being managed
         """
         logging.info(f"Creating cancellation monitor task for Context: {context.id()}")
-
-        # Create a future that will be set with the request ID
-        request_id_future = asyncio.Future()
 
         # Start the cancellation monitoring task
         cancellation_task = asyncio.create_task(
@@ -215,7 +213,7 @@ class BaseWorkerHandler(ABC):
         )
 
         try:
-            yield request_id_future
+            yield cancellation_task
         finally:
             # Clean up the background cancellation task
             request_id = "unknown"
