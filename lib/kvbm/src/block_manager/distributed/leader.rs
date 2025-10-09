@@ -96,7 +96,7 @@ impl KvbmLeader {
 
         config.sanity_check().map_err(to_pyerr)?;
 
-        let rt = drt.runtime().primary();
+        let rt = tokio::runtime::Handle::current();
 
         tracing::info!("we are here 3");
 
