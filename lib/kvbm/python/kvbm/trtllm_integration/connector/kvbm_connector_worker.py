@@ -14,7 +14,7 @@ class DynamoKVBMConnectorWorker(KvCacheConnectorWorker):
     def __init__(self, llm_args: TorchLlmArgs):
         super().__init__(llm_args)
 
-        self.drt = DistributedRuntime(None, False)
+        self.drt = DistributedRuntime.detached()
 
         mappings = self._llm_args.parallel_config.to_mapping()
         self.rank = mappings.rank

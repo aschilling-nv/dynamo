@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: Apache-2.0
 
 use super::*;
-use utils::get_barrier_id_prefix;
 use tracing;
+use utils::get_barrier_id_prefix;
 
 use derive_getters::Dissolve;
 use llm_rs::block_manager::distributed::{
     KvbmLeader as KvbmLeaderImpl, KvbmLeaderConfig, KvbmLeaderNumBlocksConfig,
 };
-use tokio::sync::oneshot;
 
 const CPU_CACHE: &str = "DYN_KVBM_CPU_CACHE_GB";
 const CPU_CACHE_OVERRIDE: &str = "DYN_KVBM_CPU_CACHE_OVERRIDE_NUM_BLOCKS";
