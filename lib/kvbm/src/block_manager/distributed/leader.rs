@@ -101,15 +101,8 @@ impl KvbmLeader {
 
         tracing::info!("we are here 3");
 
-        let leader = {
-            let (tx, rx) = oneshot::channel();
-            handle.spawn(async move {
-                let res = KvbmLeaderImpl::new(config).await.map_err(to_pyerr);
-                let _ = tx.send(res);
-            });
-            // Wait synchronously on this thread (no runtime required)
-            rx.blocking_recv().expect("runtime task panicked or shut down")?
-        };
+        let leader =
+            rt.block_on(async move { KvbmLeaderImpl::new(config).await.map_err(to_pyerr) })?;
 
         tracing::info!("we are here 4");
 
