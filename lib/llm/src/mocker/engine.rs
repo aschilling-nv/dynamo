@@ -438,7 +438,7 @@ pub struct AnnotatedMockEngine {
 impl AnnotatedMockEngine {
     pub fn new(
         inner: MockVllmEngine,
-        distributed_runtime: DistributedRuntime,
+        distributed_runtime: Arc<DistributedRuntime>,
         endpoint_id: dynamo_runtime::protocols::EndpointId,
     ) -> Self {
         let inner = Arc::new(inner);
@@ -507,7 +507,7 @@ impl AsyncEngine<SingleIn<PreprocessedRequest>, ManyOut<Annotated<LLMEngineOutpu
 
 /// Create a mocker engine as ExecutionContext
 pub async fn make_mocker_engine(
-    distributed_runtime: DistributedRuntime,
+    distributed_runtime: Arc<DistributedRuntime>,
     endpoint_id: dynamo_runtime::protocols::EndpointId,
     args: MockEngineArgs,
 ) -> Result<crate::backend::ExecutionContext, Error> {

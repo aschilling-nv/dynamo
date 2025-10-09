@@ -12,6 +12,7 @@ use std::{
     io::{IsTerminal as _, Read as _},
     path::PathBuf,
     str::FromStr,
+    sync::Arc,
 };
 
 pub mod batch;
@@ -107,7 +108,7 @@ impl Default for Input {
 /// For Input::Endpoint pass a DistributedRuntime. For everything else pass either a Runtime or a
 /// DistributedRuntime.
 pub async fn run_input(
-    rt: Either<dynamo_runtime::Runtime, dynamo_runtime::DistributedRuntime>,
+    rt: Either<dynamo_runtime::Runtime, Arc<dynamo_runtime::DistributedRuntime>>,
     in_opt: Input,
     engine_config: super::EngineConfig,
 ) -> anyhow::Result<()> {

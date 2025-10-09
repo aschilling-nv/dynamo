@@ -21,9 +21,9 @@ impl DisaggregatedRouter {
         model_name: String,
         default_max_local_prefill_length: i32,
     ) -> PyResult<Self> {
-        let drt_arc = Python::with_gil(|py| {
-            let drt_ref = drt.extract::<DistributedRuntime>(py)?;
-            Ok::<_, PyErr>(Arc::new(drt_ref.inner))
+        let drt_arc = Python::with_gil(|py| -> PyResult<Arc<rs::DistributedRuntime>> {
+            let drt_ref: pyo3::PyRef<'_, DistributedRuntime> = drt.extract(py)?;
+            Ok(Arc::clone(&drt_ref.inner))
         })?;
 
         // Create the runtime directly with the correct import

@@ -5,14 +5,19 @@ use futures::StreamExt;
 use once_cell::sync::OnceCell;
 use pyo3::IntoPyObjectExt;
 use pyo3::exceptions::PyStopAsyncIteration;
+use pyo3::types::PyCapsule;
 use pyo3::types::{PyDict, PyString};
 use pyo3::{exceptions::PyException, prelude::*};
 use rand::seq::IteratorRandom as _;
 use rs::pipeline::network::Ingress;
+use std::ffi::CString;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::path::PathBuf;
 use std::time::Duration;
-use std::{fmt::Display, sync::Arc};
+use std::{
+    fmt::Display,
+    sync::{Arc, Weak},
+};
 use tokio::sync::Mutex;
 use tracing::{Instrument, info_span};
 
@@ -192,9 +197,6 @@ fn _core(m: &Bound<'_, PyModule>) -> PyResult<()> {
     prometheus_metrics::add_to_module(&prometheus_metrics)?;
     m.add_submodule(&prometheus_metrics)?;
 
-    #[cfg(feature = "block-manager")]
-    llm::block_manager::add_to_module(m)?;
-
     Ok(())
 }
 
@@ -290,7 +292,7 @@ fn register_llm<'p>(
 #[pyclass]
 #[derive(Clone)]
 pub struct DistributedRuntime {
-    inner: rs::DistributedRuntime,
+    inner: Arc<rs::DistributedRuntime>,
     event_loop: PyObject,
 }
 
@@ -406,7 +408,10 @@ impl DistributedRuntime {
             };
         let inner = inner.map_err(to_pyerr)?;
 
-        Ok(DistributedRuntime { inner, event_loop })
+        Ok(DistributedRuntime {
+            inner: Arc::new(inner),
+            event_loop,
+        })
     }
 
     #[staticmethod]
@@ -419,7 +424,7 @@ impl DistributedRuntime {
             .map_err(to_pyerr)?;
 
         Ok(DistributedRuntime {
-            inner,
+            inner: Arc::new(inner),
             event_loop: py.None(),
         })
     }
@@ -583,6 +588,16 @@ impl DistributedRuntime {
     fn child_token(&self) -> CancellationToken {
         let inner = self.inner.runtime().child_token();
         CancellationToken { inner }
+    }
+
+    /// Return a typed PyCapsule carrying a Weak<rs::DistributedRuntime>.
+    #[pyo3(name = "to_capsule")]
+    fn to_capsule<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyCapsule>> {
+        let weak: Weak<rs::DistributedRuntime> = Arc::downgrade(&self.inner);
+
+        let name = CString::new("dynamo.runtime.weak").expect("valid capsule name");
+
+        PyCapsule::new(py, weak, Some(name))
     }
 }
 
