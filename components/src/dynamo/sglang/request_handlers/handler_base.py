@@ -13,7 +13,7 @@ import sglang as sgl
 from sglang.srt.utils import get_ip
 
 from dynamo._core import Client, Component, Context
-from dynamo.sglang.args import Config, DisaggregationMode
+from dynamo.sglang.args import Config
 from dynamo.sglang.publisher import DynamoSglangPublisher
 
 
@@ -130,21 +130,47 @@ class BaseWorkerHandler(ABC):
         try:
             logging.debug(f"Cancellation monitor started for Context: {context.id()}")
 
-            # Wait for the request ID to be available
-            try:
-                sglang_request_id = await request_id_future
-                logging.debug(
-                    f"Cancellation monitor received SGLang Request ID {sglang_request_id} for Context: {context.id()}"
-                )
-            except asyncio.CancelledError:
-                # Monitor was cancelled before request ID was available
-                logging.debug(
-                    f"Cancellation monitor cancelled before request ID available for Context: {context.id()}"
-                )
-                raise
+            # Race between getting the request ID and receiving cancellation signal
+            # This handles the case where cancellation happens before first response is consumed
+            done, pending = await asyncio.wait(
+                {
+                    request_id_future,
+                    context.async_killed_or_stopped(),
+                },
+                return_when=asyncio.FIRST_COMPLETED,
+            )
 
-            # Now wait for cancellation signal
-            await context.async_killed_or_stopped()
+            # Cancel any pending tasks
+            for task in pending:
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
+
+            # Check if we got the request ID
+            sglang_request_id = None
+            if request_id_future.done() and not request_id_future.cancelled():
+                try:
+                    sglang_request_id = request_id_future.result()
+                    logging.debug(
+                        f"Cancellation monitor received SGLang Request ID {sglang_request_id} for Context: {context.id()}"
+                    )
+                except Exception:
+                    pass
+
+            # Check if cancellation was signaled
+            if context.is_stopped() or context.is_killed():
+                if sglang_request_id is None:
+                    logging.info(
+                        f"Request cancelled before SGLang request ID available for Context: {context.id()}"
+                    )
+                    # Request was cancelled before we could get the SGLang request ID
+                    # Nothing to abort since we don't have it
+                    return
+            else:
+                # Request ID became available, now wait for actual cancellation
+                await context.async_killed_or_stopped()
 
             logging.info(
                 f"Cancellation signal received for SGLang Request ID {sglang_request_id}, Context: {context.id()}"
@@ -163,10 +189,7 @@ class BaseWorkerHandler(ABC):
                     self.engine.tokenizer_manager.abort_request(
                         rid=sglang_request_id, abort_all=False
                     )
-                    is_prefill = self.serving_mode == DisaggregationMode.PREFILL
-                    logging.info(
-                        f"Aborted {'Prefill ' if is_prefill else ''}Request ID: {context.id()}"
-                    )
+                    logging.info(f"Aborted Request ID: {context.id()}")
                 except Exception as e:
                     logging.error(
                         f"Failed to abort SGLang request {sglang_request_id}: {e}"
