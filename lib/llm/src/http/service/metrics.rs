@@ -26,7 +26,7 @@ pub use prometheus::Registry;
 
 use super::RouteDoc;
 
-/// State for metrics handler with NIM support
+/// State for metrics handler with custom backend support
 struct MetricsHandlerState {
     registry: Arc<Registry>,
 }
@@ -830,19 +830,15 @@ pub fn process_response_using_event_converter_and_observe_metrics<T: Serialize>(
     Ok(event)
 }
 
-/// Create a new router with optional NIM metrics support
+/// Create a new router with optional custom backend metrics support
 pub fn router(
     registry: Registry,
     path: Option<String>,
-    nim_on_demand: bool,
-    nim_state: Option<Arc<super::service_v2::State>>,
+    _nim_on_demand: bool,
+    _nim_state: Option<Arc<super::service_v2::State>>,
 ) -> (Vec<RouteDoc>, Router) {
     let path = path.unwrap_or_else(|| "/metrics".to_string());
     let doc = RouteDoc::new(axum::http::Method::GET, &path);
-
-    // DEPRECATION: NIM metrics support is temporary and will be removed once NIM uses Dynamo backend
-    let mut registry = registry;
-    super::nim::register_nim_collector_if_enabled(&mut registry, nim_on_demand, nim_state.as_ref());
 
     let metrics_state = MetricsHandlerState {
         registry: Arc::new(registry),
@@ -854,12 +850,12 @@ pub fn router(
     (vec![doc], route)
 }
 
-/// Create a basic router without NIM support (backward compatibility)
+/// Create a basic router without custom backend support (backward compatibility)
 pub fn basic_router(registry: Registry, path: Option<String>) -> (Vec<RouteDoc>, Router) {
     router(registry, path, false, None)
 }
 
-/// Unified metrics handler with optional NIM support
+/// Unified metrics handler with optional custom backend support
 async fn handler_metrics(State(state): State<Arc<MetricsHandlerState>>) -> impl IntoResponse {
     // Gather and encode metrics
     // Note: If nim_on_demand is enabled, the NimMetricsCollector registered with the registry

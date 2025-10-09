@@ -20,11 +20,11 @@
 
 mod openai;
 
+pub mod custom_backend_metrics;
 pub mod disconnect;
 pub mod error;
 pub mod health;
 pub mod metrics;
-pub mod nim;
 pub mod service_v2;
 
 pub use axum;

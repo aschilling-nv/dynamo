@@ -133,8 +133,12 @@ pub struct HttpService {
     tls_cert_path: Option<PathBuf>,
     tls_key_path: Option<PathBuf>,
     route_docs: Vec<RouteDoc>,
-    nim_metrics_polling_interval_seconds: f64,
-    nim_metrics_on_demand: bool,
+
+    // DEPRECATED: To be removed after custom backends migrate to Dynamo backend.
+    pub(crate) custom_backend_namespace_component_endpoint: Option<String>,
+    pub(crate) custom_backend_metrics_polling_interval: Option<f64>,
+    pub(crate) custom_backend_registry:
+        Option<Arc<super::custom_backend_metrics::CustomBackendMetricsRegistry>>,
 }
 
 #[derive(Clone, Builder)]
@@ -175,11 +179,12 @@ pub struct HttpServiceConfig {
     #[builder(default = "None")]
     etcd_client: Option<etcd::Client>,
 
-    #[builder(default = "0.0")]
-    nim_metrics_polling_interval_seconds: f64,
+    // DEPRECATED: To be removed after custom backends migrate to Dynamo backend.
+    #[builder(default = "None")]
+    custom_backend_namespace_component_endpoint: Option<String>,
 
-    #[builder(default = "false")]
-    nim_metrics_on_demand: bool,
+    #[builder(default = "None")]
+    custom_backend_metrics_polling_interval: Option<f64>,
 }
 
 impl HttpService {
@@ -208,16 +213,6 @@ impl HttpService {
         let address = format!("{}:{}", self.host, self.port);
         let protocol = if self.enable_tls { "HTTPS" } else { "HTTP" };
         tracing::info!(protocol, address, "Starting HTTP(S) service");
-
-        // Start NIM metrics polling task if enabled (interval > 0)
-        if self.nim_metrics_polling_interval_seconds > 0.0 {
-            let interval = self.nim_metrics_polling_interval_seconds;
-            let state = self.state.clone();
-            let polling_token = cancel_token.child_token();
-            tokio::spawn(async move {
-                Self::start_background_nim_metrics_polling(state, interval, polling_token).await;
-            });
-        }
 
         let router = self.router.clone();
         let observer = cancel_token.child_token();
@@ -288,60 +283,6 @@ impl HttpService {
             if enable { "enabled" } else { "disabled" }
         );
     }
-
-    pub fn nim_metrics_polling_interval_seconds(&self) -> f64 {
-        self.nim_metrics_polling_interval_seconds
-    }
-
-    pub fn nim_metrics_on_demand(&self) -> bool {
-        self.nim_metrics_on_demand
-    }
-
-    /// Background task to poll NIM backend metrics
-    async fn start_background_nim_metrics_polling(
-        state: Arc<State>,
-        interval_secs: f64,
-        cancel_token: CancellationToken,
-    ) {
-        let interval = Duration::from_secs_f64(interval_secs);
-        let mut ticker = tokio::time::interval(interval);
-
-        tracing::info!(
-            "Starting NIM metrics polling task with interval: {}s",
-            interval_secs
-        );
-
-        loop {
-            tokio::select! {
-                _ = cancel_token.cancelled() => {
-                        tracing::info!("NIM metrics background polling task cancelled");
-                    break;
-                }
-                _ = ticker.tick() => {
-                    if let Err(e) = Self::poll_nim_backend_stats(&state).await {
-                        tracing::error!("Failed to poll NIM backend stats: {}", e);
-                    }
-                }
-            }
-        }
-    }
-
-    /// Poll NIM backend stats from the runtime_stats endpoint
-    ///
-    /// DEPRECATION: Remove this once NIM uses Dynamo backend for metrics
-    pub async fn poll_nim_backend_stats(state: &Arc<State>) -> Result<()> {
-        super::nim::poll_nim_backend_stats(state).await
-    }
-
-    /// Poll NIM backend stats and update the NimMetricsRegistry with dynamic metrics
-    ///
-    /// DEPRECATION: Remove this once NIM uses Dynamo backend for metrics
-    pub async fn poll_nim_backend_stats_with_registry(
-        state: &Arc<State>,
-        nim_registry: &super::nim::NimMetricsRegistry,
-    ) -> Result<()> {
-        super::nim::poll_nim_backend_stats_with_registry(state, nim_registry).await
-    }
 }
 
 /// Environment variable to set the metrics endpoint path (default: `/metrics`)
@@ -365,11 +306,6 @@ impl HttpServiceConfigBuilder {
     pub fn build(self) -> Result<HttpService, anyhow::Error> {
         let config: HttpServiceConfig = self.build_internal()?;
 
-        // Validate NIM metrics configuration
-        if config.nim_metrics_polling_interval_seconds > 0.0 && config.nim_metrics_on_demand {
-            anyhow::bail!("NIM metrics polling and sync pull cannot be enabled together");
-        }
-
         let model_manager = Arc::new(ModelManager::new());
         let etcd_client = config.etcd_client;
         let state = Arc::new(State::new_with_etcd(model_manager, etcd_client));
@@ -391,23 +327,28 @@ impl HttpServiceConfigBuilder {
         let registry = metrics::Registry::new();
         state.metrics_clone().register(&registry)?;
 
-        // Note: Metrics polling task will be started in run() method to have access to cancellation token
+        // DEPRECATED: To be removed after custom backends migrate to Dynamo backend.
+        // Setup custom backend metrics if configured
+        let custom_backend_registry =
+            if config.custom_backend_namespace_component_endpoint.is_some()
+                && config.custom_backend_metrics_polling_interval.is_some()
+            {
+                Some(Arc::new(
+                    super::custom_backend_metrics::CustomBackendMetricsRegistry::new(
+                        "dynamo_backend".to_string(),
+                        registry.clone(),
+                    ),
+                ))
+            } else {
+                None
+            };
 
         let mut router = axum::Router::new();
 
         let mut all_docs = Vec::new();
 
         let mut routes = vec![
-            metrics::router(
-                registry,
-                var(HTTP_SVC_METRICS_PATH_ENV).ok(),
-                config.nim_metrics_on_demand,
-                if config.nim_metrics_on_demand {
-                    Some(state.clone())
-                } else {
-                    None
-                },
-            ),
+            metrics::basic_router(registry, var(HTTP_SVC_METRICS_PATH_ENV).ok()),
             super::openai::list_models_router(state.clone(), var(HTTP_SVC_MODELS_PATH_ENV).ok()),
             super::health::health_check_router(state.clone(), var(HTTP_SVC_HEALTH_PATH_ENV).ok()),
             super::health::live_check_router(state.clone(), var(HTTP_SVC_LIVE_PATH_ENV).ok()),
@@ -433,8 +374,10 @@ impl HttpServiceConfigBuilder {
             tls_cert_path: config.tls_cert_path,
             tls_key_path: config.tls_key_path,
             route_docs: all_docs,
-            nim_metrics_polling_interval_seconds: config.nim_metrics_polling_interval_seconds,
-            nim_metrics_on_demand: config.nim_metrics_on_demand,
+            custom_backend_namespace_component_endpoint: config
+                .custom_backend_namespace_component_endpoint,
+            custom_backend_metrics_polling_interval: config.custom_backend_metrics_polling_interval,
+            custom_backend_registry,
         })
     }
 
@@ -445,6 +388,17 @@ impl HttpServiceConfigBuilder {
 
     pub fn with_etcd_client(mut self, etcd_client: Option<etcd::Client>) -> Self {
         self.etcd_client = Some(etcd_client);
+        self
+    }
+
+    // DEPRECATED: To be removed after custom backends migrate to Dynamo backend.
+    pub fn with_custom_backend_config(
+        mut self,
+        namespace_component_endpoint: Option<String>,
+        polling_interval: Option<f64>,
+    ) -> Self {
+        self.custom_backend_namespace_component_endpoint = Some(namespace_component_endpoint);
+        self.custom_backend_metrics_polling_interval = Some(polling_interval);
         self
     }
 

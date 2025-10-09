@@ -16,20 +16,28 @@ This example demonstrates:
 
 ### 1. Start the Mock NIM Backend
 
+**Static mode (default - NATS only, no etcd):**
 ```bash
-python3 examples/custom_backend/nim/mock_nim_server.py
+python3 examples/custom_backend/nim/mock_nim_backend.py
 ```
 
-This starts a backend on `dynamo/backend/runtime_stats` that returns incrementing metrics.
+**Dynamic mode (with etcd for service discovery):**
+```bash
+python3 examples/custom_backend/nim/mock_nim_backend.py --use-etcd
+```
 
-### 2. Start the Frontend with On-Demand Metrics
+This starts a backend on `nim.backend.runtime_stats` (default) that returns incrementing metrics. You can customize with `--custom-backend-metrics-endpoint "namespace.component.endpoint"`.
+
+### 2. Start the Frontend with Metrics Polling
 
 ```bash
-NIM_METRICS_ON_DEMAND=1 python3 -m dynamo.frontend \
-    --model-name test-model \
-    --model-path /path/to/model \
-    --engine-type static
+python3 -m dynamo.frontend \
+    --model-name Qwen/Qwen2.5-0.5B-Instruct \
+    --custom-backend-metrics-endpoint nim.backend.runtime_stats \
+    --custom-backend-metrics-polling-interval 9.2
 ```
+
+**Note:** The custom backend metrics polling works in both static (NATS-only) and dynamic (with etcd) modes. The frontend automatically detects and adapts to the backend's mode.
 
 ### 3. Query Metrics
 
@@ -37,11 +45,12 @@ NIM_METRICS_ON_DEMAND=1 python3 -m dynamo.frontend \
 curl http://localhost:8000/metrics
 ```
 
-Each time you hit the `/metrics` endpoint, the frontend will:
+The frontend will periodically (every 9.2 seconds in this example):
 1. Poll the mock NIM backend via the `runtime_stats` endpoint
 2. Parse the returned metrics
-3. Update Prometheus gauges dynamically
-4. Include them in the metrics response
+3. Update Prometheus gauges
+
+When you query the `/metrics` endpoint, you'll see the most recently polled metrics.
 
 ## Metrics Exposed
 
@@ -49,19 +58,15 @@ The mock server returns:
 
 **Gauges:**
 - `kv_cache_usage_perc` - Cycles between 0.30 and 0.93
-- `gpu_utilization_perc` - Cycles between 50 and 97.5
-- `active_requests` - Cycles 0-14
-- `memory_used_gb` - Random between 12.5 and 14.5
-
-**Counters:**
-- `total_requests` - Increments with each request
-- `total_tokens_generated` - `request_count * 127`
 
 ## Implementation Details
 
 The frontend's NIM metrics collection is implemented in:
-- `lib/llm/src/http/service/nim.rs` - NIM-specific metrics collection (temporary)
-- `lib/llm/src/http/service/metrics.rs` - Metrics router with NIM support
-- `components/src/dynamo/frontend/main.py` - `NIM_METRICS_ON_DEMAND` flag
+- `lib/llm/src/http/service/custom_backend_metrics.rs` - Custom backend metrics collection (temporary)
+- `lib/llm/src/http/service/metrics.rs` - Metrics router
+- `components/src/dynamo/frontend/main.py` - `--custom-backend-metrics-polling-interval` flag
 
 All NIM-specific code is marked with TODO comments for removal once NIM adopts Dynamo backend.
+
+
+

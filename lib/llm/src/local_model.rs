@@ -59,8 +59,8 @@ pub struct LocalModelBuilder {
     user_data: Option<serde_json::Value>,
     custom_template_path: Option<PathBuf>,
     namespace: Option<String>,
-    nim_metrics_polling_interval_seconds: f64,
-    nim_metrics_on_demand: bool,
+    custom_backend_metrics_endpoint: Option<String>,
+    custom_backend_metrics_polling_interval: Option<f64>,
 }
 
 impl Default for LocalModelBuilder {
@@ -85,8 +85,8 @@ impl Default for LocalModelBuilder {
             user_data: Default::default(),
             custom_template_path: Default::default(),
             namespace: Default::default(),
-            nim_metrics_polling_interval_seconds: 0.0,
-            nim_metrics_on_demand: false,
+            custom_backend_metrics_endpoint: Default::default(),
+            custom_backend_metrics_polling_interval: Default::default(),
         }
     }
 }
@@ -188,13 +188,13 @@ impl LocalModelBuilder {
         self
     }
 
-    pub fn nim_metrics_polling_interval_seconds(&mut self, interval_seconds: f64) -> &mut Self {
-        self.nim_metrics_polling_interval_seconds = interval_seconds;
+    pub fn custom_backend_metrics_endpoint(&mut self, endpoint: Option<String>) -> &mut Self {
+        self.custom_backend_metrics_endpoint = endpoint;
         self
     }
 
-    pub fn nim_metrics_on_demand(&mut self, on_demand: bool) -> &mut Self {
-        self.nim_metrics_on_demand = on_demand;
+    pub fn custom_backend_metrics_polling_interval(&mut self, interval: Option<f64>) -> &mut Self {
+        self.custom_backend_metrics_polling_interval = interval;
         self
     }
 
@@ -208,14 +208,6 @@ impl LocalModelBuilder {
     /// - A folder: The last part of the folder name: "/data/llms/Qwen2.5-3B-Instruct" -> "Qwen2.5-3B-Instruct"
     /// - An HF repo: The HF repo name: "Qwen/Qwen3-0.6B" stays the same
     pub async fn build(&mut self) -> anyhow::Result<LocalModel> {
-        // Validate NIM metrics configuration
-        if self.nim_metrics_polling_interval_seconds < 0.0 {
-            anyhow::bail!("nim_metrics_polling_interval_seconds must be >= 0");
-        }
-        if self.nim_metrics_polling_interval_seconds > 0.0 && self.nim_metrics_on_demand {
-            anyhow::bail!("NIM metrics polling and on-demand mode cannot be enabled together");
-        }
-
         // Generate an endpoint ID for this model if the user didn't provide one.
         // The user only provides one if exposing the model.
         let endpoint_id = self
@@ -250,8 +242,9 @@ impl LocalModelBuilder {
                 router_config: self.router_config.take().unwrap_or_default(),
                 runtime_config: self.runtime_config.clone(),
                 namespace: self.namespace.clone(),
-                nim_metrics_polling_interval_seconds: self.nim_metrics_polling_interval_seconds,
-                nim_metrics_on_demand: self.nim_metrics_on_demand,
+                custom_backend_metrics_endpoint: self.custom_backend_metrics_endpoint.clone(),
+                custom_backend_metrics_polling_interval: self
+                    .custom_backend_metrics_polling_interval,
             });
         }
 
@@ -331,8 +324,8 @@ impl LocalModelBuilder {
             router_config: self.router_config.take().unwrap_or_default(),
             runtime_config: self.runtime_config.clone(),
             namespace: self.namespace.clone(),
-            nim_metrics_polling_interval_seconds: self.nim_metrics_polling_interval_seconds,
-            nim_metrics_on_demand: self.nim_metrics_on_demand,
+            custom_backend_metrics_endpoint: self.custom_backend_metrics_endpoint.clone(),
+            custom_backend_metrics_polling_interval: self.custom_backend_metrics_polling_interval,
         })
     }
 }
@@ -350,8 +343,8 @@ pub struct LocalModel {
     router_config: RouterConfig,
     runtime_config: ModelRuntimeConfig,
     namespace: Option<String>,
-    nim_metrics_polling_interval_seconds: f64,
-    nim_metrics_on_demand: bool,
+    custom_backend_metrics_endpoint: Option<String>,
+    custom_backend_metrics_polling_interval: Option<f64>,
 }
 
 impl LocalModel {
@@ -406,12 +399,12 @@ impl LocalModel {
         self.namespace.as_deref()
     }
 
-    pub fn nim_metrics_polling_interval_seconds(&self) -> f64 {
-        self.nim_metrics_polling_interval_seconds
+    pub fn custom_backend_metrics_endpoint(&self) -> Option<&str> {
+        self.custom_backend_metrics_endpoint.as_deref()
     }
 
-    pub fn nim_metrics_on_demand(&self) -> bool {
-        self.nim_metrics_on_demand
+    pub fn custom_backend_metrics_polling_interval(&self) -> Option<f64> {
+        self.custom_backend_metrics_polling_interval
     }
 
     pub fn is_gguf(&self) -> bool {
