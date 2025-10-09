@@ -73,12 +73,12 @@ impl KvbmLeader {
     #[new]
     #[pyo3(signature = (world_size, drt))]
     fn new(world_size: usize, drt: PyObject) -> PyResult<Self> {
-        tracing::info("we are here 1");
+        tracing::info!("we are here 1");
 
         let drt: Arc<rs::DistributedRuntime> =
             Python::with_gil(|py| extract_distributed_runtime_from_obj(py, drt))?;
 
-        tracing::info("we are here 2");
+        tracing::info!("we are here 2");
 
         let barrier_id_prefix = get_barrier_id_prefix();
         let leader_init_timeout_sec: u64 =
@@ -98,7 +98,7 @@ impl KvbmLeader {
 
         let rt = drt.runtime().primary();
 
-        tracing::info("we are here 3");
+        tracing::info!("we are here 3");
 
         let leader =
             rt.block_on(async move { KvbmLeaderImpl::new(config).await.map_err(to_pyerr) })?;
