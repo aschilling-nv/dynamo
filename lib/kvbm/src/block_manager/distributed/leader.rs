@@ -9,6 +9,7 @@ use derive_getters::Dissolve;
 use llm_rs::block_manager::distributed::{
     KvbmLeader as KvbmLeaderImpl, KvbmLeaderConfig, KvbmLeaderNumBlocksConfig,
 };
+use tokio::sync::oneshot;
 
 const CPU_CACHE: &str = "DYN_KVBM_CPU_CACHE_GB";
 const CPU_CACHE_OVERRIDE: &str = "DYN_KVBM_CPU_CACHE_OVERRIDE_NUM_BLOCKS";
@@ -96,12 +97,19 @@ impl KvbmLeader {
 
         config.sanity_check().map_err(to_pyerr)?;
 
-        let rt = drt.runtime().primary();
+        let handle = drt.runtime().primary();
 
         tracing::info!("we are here 3");
 
-        let leader =
-            rt.block_on(async move { KvbmLeaderImpl::new(config).await.map_err(to_pyerr) })?;
+        let leader = {
+            let (tx, rx) = oneshot::channel();
+            handle.spawn(async move {
+                let res = KvbmLeaderImpl::new(config).await.map_err(to_pyerr);
+                let _ = tx.send(res);
+            });
+            // Wait synchronously on this thread (no runtime required)
+            rx.blocking_recv().expect("runtime task panicked or shut down")?
+        };
 
         tracing::info!("we are here 4");
 
