@@ -3,6 +3,7 @@
 
 use super::*;
 use utils::get_barrier_id_prefix;
+use tracing;
 
 use derive_getters::Dissolve;
 use llm_rs::block_manager::distributed::{
