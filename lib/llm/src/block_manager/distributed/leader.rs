@@ -135,12 +135,14 @@ pub struct KvbmLeader {
 
 impl KvbmLeader {
     pub async fn new(mut config: KvbmLeaderConfig) -> anyhow::Result<Self> {
+        tracing::debug!("we are here 5!");
         let drt = match config.drt.take() {
             Some(dtr) => dtr,
             None => {
                 anyhow::bail!("No distributed runtime provided");
             }
         };
+        tracing::debug!("we are here 6!");
 
         let leader_sockets = new_leader_sockets("tcp://127.0.0.1")?;
 
