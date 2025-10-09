@@ -103,6 +103,8 @@ impl KvbmLeader {
         let leader =
             rt.block_on(async move { KvbmLeaderImpl::new(config).await.map_err(to_pyerr) })?;
 
+        tracing::info!("we are here 4");
+
         Ok(Self {
             leader: Arc::new(leader),
             drt,
