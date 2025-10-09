@@ -163,13 +163,17 @@ impl KvbmLeader {
             leader_sockets.pub_url.clone(),
             leader_sockets.ack_url.clone(),
         );
+        tracing::debug!("we are here 7!");
         leader.spawn_barrier_task(drt, leader_urls);
+        tracing::debug!("we are here 8!");
         leader.spawn_zmq_task(leader_sockets, cancel_token);
+        tracing::debug!("we are here 9!");
 
         Ok(leader)
     }
 
     fn spawn_barrier_task(&self, drt: Arc<DistributedRuntime>, leader_urls: (String, String)) {
+        tracing::debug!("we are here 100!");
         let state = self.state.clone();
         let leader_config = self.config.clone();
         let ready = Arc::clone(&self.workers_sync_ready);
@@ -179,6 +183,7 @@ impl KvbmLeader {
         tokio::spawn(async move {
             match KvbmLeader::run_barrier_sync(drt, leader_urls, leader_config).await {
                 Ok((num_device_blocks, num_host_blocks, num_disk_blocks)) => {
+                    tracing::debug!("we are here 10!");
                     // write back results
                     state
                         .num_device_blocks
@@ -207,6 +212,7 @@ impl KvbmLeader {
         leader_urls: (String, String),
         leader_config: KvbmLeaderConfig,
     ) -> anyhow::Result<(usize, usize, usize)> {
+        tracing::debug!("we are here 11!");
         let barrier_id_worker_to_leader =
             format!("{}{}", leader_config.barrier_id_prefix, "-worker-to-leader");
         tracing::info!(
@@ -215,6 +221,7 @@ impl KvbmLeader {
             barrier_id_worker_to_leader
         );
 
+        tracing::debug!("we are here 12!");
         // Build our leader barrier and publish the data.
         // TODO: Use a separate timeout parameter from the ZMQ connection timeout
         let worker_to_leader_barrier: LeaderBarrier<(), worker::KvbmWorkerData> =
