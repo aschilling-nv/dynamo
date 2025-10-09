@@ -165,6 +165,7 @@ class BaseWorkerHandler(ABC):
                     logging.info(
                         f"Request cancelled before SGLang request ID available for Context: {context.id()}"
                     )
+                    logging.info(f"Aborted Request ID: {context.id()}")
                     # Request was cancelled before we could get the SGLang request ID
                     # Nothing to abort since we don't have it
                     return
