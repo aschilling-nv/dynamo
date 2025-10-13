@@ -9,7 +9,7 @@ import sys
 project = "NVIDIA Dynamo"
 copyright = "2024-2025, NVIDIA CORPORATION & AFFILIATES"
 author = "NVIDIA"
-release = "0.5.0"
+release = "latest"
 
 # -- General configuration ---------------------------------------------------
 

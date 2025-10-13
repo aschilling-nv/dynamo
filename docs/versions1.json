@@ -1,8 +1,12 @@
 [
     {
         "preferred": true,
+        "version": "latest",
+        "url": "https://docs.nvidia.com/dynamo/latest/"
+    },
+    {
         "version": "0.5.0",
-        "url": "https://docs.nvidia.com/dynamo/0.5.0/"
+        "url": "https://docs.nvidia.com/dynamo/archive/0.5.0/"
     },
     {
         "name": "0.4.1",
