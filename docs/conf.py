@@ -33,6 +33,23 @@ extensions = [
     "sphinx_reredirects",
 ]
 
+# Redirects configuration
+redirects = {
+    "guides/tool-calling.html": "../agents/tool-calling.html",  # relative
+    "architecture/architecture.html": "../design_docs/architecture.html",  # relative
+    "architecture/disagg_serving.html": "../design_docs/disagg_serving.html",  # relative
+    "architecture/distributed_runtime.html": "../design_docs/distributed_runtime.html",  # relative
+    "architecture/dynamo_flow.html": "../design_docs/dynamo_flow.html",  # relative
+    "architecture/request_cancellation.html": "../fault_tolerance/request_cancellation.html",  # relative
+    "architecture/request_migration.html": "../fault_tolerance/request_migration.html",  # relative
+    "kubernetes/create_deployment.html": "../kubernetes/deployment/create_deployment.html",  # relative
+    "kubernetes/minikube.html": "../kubernetes/deployment/minikube.html",  # relative
+    "kubernetes/multinode-deployment.html": "../kubernetes/deployment/multinode-deployment.html",  # relative
+    "kubernetes/logging.html": "../kubernetes/observability/logging.html",  # relative
+    "kubernetes/metrics.html": "../kubernetes/observability/metrics.html",  # relative
+    "architecture/kv_cache_routing.html": "../router/kv_cache_routing.html",  # relative
+}
+
 # Custom extensions
 sys.path.insert(0, os.path.abspath("_extensions"))
 extensions.append("github_alerts")
