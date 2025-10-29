@@ -35,19 +35,19 @@ extensions = [
 
 # Redirects configuration
 redirects = {
-    "guides/tool-calling.html": "../agents/tool-calling.html",  # relative
-    "architecture/architecture.html": "../design_docs/architecture.html",  # relative
-    "architecture/disagg_serving.html": "../design_docs/disagg_serving.html",  # relative
-    "architecture/distributed_runtime.html": "../design_docs/distributed_runtime.html",  # relative
-    "architecture/dynamo_flow.html": "../design_docs/dynamo_flow.html",  # relative
-    "architecture/request_cancellation.html": "../fault_tolerance/request_cancellation.html",  # relative
-    "architecture/request_migration.html": "../fault_tolerance/request_migration.html",  # relative
-    "kubernetes/create_deployment.html": "../kubernetes/deployment/create_deployment.html",  # relative
-    "kubernetes/minikube.html": "../kubernetes/deployment/minikube.html",  # relative
-    "kubernetes/multinode-deployment.html": "../kubernetes/deployment/multinode-deployment.html",  # relative
-    "kubernetes/logging.html": "../kubernetes/observability/logging.html",  # relative
-    "kubernetes/metrics.html": "../kubernetes/observability/metrics.html",  # relative
-    "architecture/kv_cache_routing.html": "../router/kv_cache_routing.html",  # relative
+    "guides/tool-calling": "../agents/tool-calling.html",  # key format corrected
+    "architecture/architecture": "../design_docs/architecture.html",
+    "architecture/disagg_serving": "../design_docs/disagg_serving.html",
+    "architecture/distributed_runtime": "../design_docs/distributed_runtime.html",
+    "architecture/dynamo_flow": "../design_docs/dynamo_flow.html",
+    "architecture/request_cancellation": "../fault_tolerance/request_cancellation.html",
+    "architecture/request_migration": "../fault_tolerance/request_migration.html",
+    "kubernetes/create_deployment": "../kubernetes/deployment/create_deployment.html",
+    "kubernetes/minikube": "../kubernetes/deployment/minikube.html",
+    "kubernetes/multinode-deployment": "../kubernetes/deployment/multinode-deployment.html",
+    "kubernetes/logging": "../kubernetes/observability/logging.html",
+    "kubernetes/metrics": "../kubernetes/observability/metrics.html",
+    "architecture/kv_cache_routing": "../router/kv_cache_routing.html",
 }
 
 # Custom extensions

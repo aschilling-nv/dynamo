@@ -72,7 +72,7 @@ This approach is ideal for CI/CD pipelines or when you want complete isolation f
 
 When moving or renaming files a redirect must be created.
 
-The logic for redirect creation is located [here](https://documatt.com/sphinx-reredirects/usage/#introduction) and should be added to the existing list in the conf.py.
+Redirect entries should be added to the `redirects` dictionary in `conf.py`. For detailed information on redirect syntax, see the [sphinx-reredirects usage documentation](https://documatt.com/sphinx-reredirects/usage/#introduction).
 
 ## Dependency Management
 
