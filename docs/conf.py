@@ -30,6 +30,7 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.extlinks",
     "sphinxcontrib.mermaid",
+    "sphinx-reredirects",
 ]
 
 # Custom extensions
