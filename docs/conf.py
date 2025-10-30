@@ -63,7 +63,7 @@ redirects = {
     "API/nixl_connect/write_operation": "../../api/nixl_connect/write_operation.html",
     "guides/backend": "../development/backend-guide.html",
     "runtime/README": "../development/runtime-guide.html",
-    "guides/tool_calling": "../guides/tool-calling.html",
+    "guides/tool_calling": "../agents/tool-calling.html",
     "architecture/kvbm_architecture": "../kvbm/kvbm_architecture.html",
     "architecture/kvbm_components": "../kvbm/kvbm_components.html",
     "architecture/kvbm_intro": "../kvbm/kvbm_intro.html",
